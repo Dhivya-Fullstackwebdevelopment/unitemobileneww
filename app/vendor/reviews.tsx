@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { reviewApi } from '../../lib/apiClient';
 import { Colors } from '../../constants/Colors';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 
 export default function VendorReviewsScreen() {
   const C = Colors;

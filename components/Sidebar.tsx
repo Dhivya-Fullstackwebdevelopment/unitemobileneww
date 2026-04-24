@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import { useSidebarStore } from '../store/sidebarStore';
 import { Colors, Gradients } from '../constants/Colors';
-import { THEME } from './Reuse.tsx/Reusecolor';
+import { THEME } from './Reuse/Reusecolor';
 
 const { width, height } = Dimensions.get('window');
 const SIDEBAR_WIDTH = width * 0.78;

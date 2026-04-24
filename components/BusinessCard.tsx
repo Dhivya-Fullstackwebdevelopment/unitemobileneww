@@ -361,7 +361,7 @@ import { Colors, Gradients } from '../constants/Colors';
 import { BusinessCard as BusinessCardType } from '../types';
 import StarRating from './StarRating';
 import { API_BASE_URL } from '../constants/api';
-import { THEME } from './Reuse.tsx/Reusecolor';
+import { THEME } from './Reuse/Reusecolor';
 
 interface Props {
   business: BusinessCardType;

@@ -18,7 +18,7 @@ import { businessApi, bookingApi } from '../../lib/apiClient';
 import { Colors, Gradients } from '../../constants/Colors';
 import { BusinessCard } from '../../types';
 import { API_BASE_URL } from '../../constants/api';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 
 function buildUrl(url?: string) {
   if (!url) return undefined;

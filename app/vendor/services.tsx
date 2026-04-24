@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { businessApi, serviceApi } from '../../lib/apiClient';
 import { Colors } from '../../constants/Colors';
 import { ServiceCreate } from '../../types';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 import Toast from 'react-native-toast-message';
 
 export default function VendorServicesScreen() {

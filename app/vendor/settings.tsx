@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } f
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 
 export default function VendorSettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);

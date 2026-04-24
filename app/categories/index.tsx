@@ -19,7 +19,7 @@ import { catalogApi } from '../../lib/apiClient';
 import { Colors } from '../../constants/Colors';
 import { Category } from '../../types';
 import { getCategoryBanner } from '../../constants/CategoryBanners';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_GAP = 12;
@@ -28,24 +28,24 @@ const CARD_PADDING = 20;
 const CARD_WIDTH = SCREEN_WIDTH - CARD_PADDING * 2;
 // Slug → Ionicons icon map
 const CATEGORY_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
-  'restaurants-cafes': 'restaurant-outline',
+  'restaurants_cafes': 'restaurant-outline',
   'food-beverages': 'restaurant-outline',
   'coffee-cafes': 'cafe-outline',
-  'grooming-for-men': 'cut-outline',
-  'beauty-for-women': 'flower-outline',
+  'grooming_for_men': 'cut-outline',
+  'beauty_for_women': 'flower-outline',
   'spa': 'color-wand-outline',
-  'health-wellness': 'heart-outline',
-  'fitness-gym': 'barbell-outline',
-  'it-software': 'laptop-outline',
+  'health_wellness': 'heart-outline',
+  'fitness_gym': 'barbell-outline',
+  'it_software': 'laptop-outline',
   'electronics': 'hardware-chip-outline',
   'retail': 'bag-handle-outline',
-  'fashion-clothing': 'shirt-outline',
-  'home-services': 'home-outline',
-  'cleaning-services': 'sparkles-outline',
+  'fashion_clothing': 'shirt-outline',
+  'home_services': 'home-outline',
+  'cleaning_services': 'sparkles-outline',
   'automotive': 'car-outline',
   'education': 'school-outline',
-  'travel-tourism': 'airplane-outline',
-  'real-estate': 'business-outline',
+  'travel_tourism': 'airplane-outline',
+  'realestate': 'business-outline',
   'finance': 'card-outline',
   'legal-services': 'briefcase-outline',
   'events-entertainment': 'musical-notes-outline',

@@ -18,15 +18,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { businessApi } from '../../lib/apiClient';
 import { Colors } from '../../constants/Colors';
 import ShelfCard from '../../components/ShelfCard';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const CATEGORY_HERO_MAP: Record<string, string> = {
   'spa': 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1200&q=80',
   'cleaning': 'https://images.unsplash.com/photo-1581578731548-c64695ce6958?w=1200&q=80',
-  'it-software': 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&q=80',
-  'grooming-for-men': 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=1200&q=80',
+  'it_software': 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&q=80',
+  'grooming_for_men': 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=1200&q=80',
   'retail': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80',
   'car-rental': 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=1200&q=80',
   'photography': 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=1200&q=80',
@@ -38,8 +38,8 @@ const FALLBACK_HERO = 'https://images.unsplash.com/photo-1556761175-5973dc0f32d7
 const CATEGORY_ACCENT: Record<string, { color: string; bg: string; icon: string }> = {
   'spa': { color: '#A855F7', bg: '#FAF5FF', icon: 'flower-outline' },
   'cleaning': { color: '#0EA5E9', bg: '#E0F2FE', icon: 'sparkles-outline' },
-  'it-software': { color: '#6366F1', bg: '#EEF2FF', icon: 'code-slash-outline' },
-  'grooming-for-men': { color: '#F59E0B', bg: '#FFFBEB', icon: 'cut-outline' },
+  'it_software': { color: '#6366F1', bg: '#EEF2FF', icon: 'code-slash-outline' },
+  'grooming_for_men': { color: '#F59E0B', bg: '#FFFBEB', icon: 'cut-outline' },
   'retail': { color: '#EC4899', bg: '#FDF2F8', icon: 'bag-outline' },
   'car-rental': { color: '#10B981', bg: '#ECFDF5', icon: 'car-outline' },
   'photography': { color: '#EF4444', bg: '#FEF2F2', icon: 'camera-outline' },

@@ -28,24 +28,24 @@ const THEME_PINK_GRADIENT = ['#FF4081', '#7C4DFF'] as const;
 
 
 const CATEGORY_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
-  'restaurants-cafes': 'restaurant-outline',
+  'restaurants_cafes': 'restaurant-outline',
   'food-beverages': 'restaurant-outline',
   'coffee-cafes': 'cafe-outline',
-  'grooming-for-men': 'cut-outline',
-  'beauty-for-women': 'flower-outline',
+  'grooming_for_men': 'cut-outline',
+  'beauty_for_women': 'flower-outline',
   spa: 'color-wand-outline',
-  'health-wellness': 'heart-outline',
-  'fitness-gym': 'barbell-outline',
-  'it-software': 'laptop-outline',
+  'health_wellness': 'heart-outline',
+  'fitness_gym': 'barbell-outline',
+  'it_software': 'laptop-outline',
   electronics: 'hardware-chip-outline',
   retail: 'bag-handle-outline',
-  'fashion-clothing': 'shirt-outline',
-  'home-services': 'home-outline',
-  'cleaning-services': 'sparkles-outline',
+  'fashion_clothing': 'shirt-outline',
+  'home_services': 'home-outline',
+  'cleaning_services': 'sparkles-outline',
   automotive: 'car-outline',
   education: 'school-outline',
-  'travel-tourism': 'airplane-outline',
-  'real-estate': 'business-outline',
+  'travel_tourism': 'airplane-outline',
+  'realestate': 'business-outline',
   finance: 'card-outline',
   'legal-services': 'briefcase-outline',
   'events-entertainment': 'musical-notes-outline',
@@ -59,19 +59,19 @@ const CATEGORY_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'restaurants-cafes': '#FF5252',
+  'restaurants_cafes': '#FF5252',
   'coffee-cafes': '#8D6E63',
-  'grooming-for-men': '#EC407A',
-  'beauty-for-women': '#D81B60',
+  'grooming_for_men': '#EC407A',
+  'beauty_for_women': '#D81B60',
   spa: '#AB47BC',
-  'health-wellness': '#F06292',
-  'fitness-gym': '#F4511E',
-  'it-software': '#5C6BC0',
+  'health_wellness': '#F06292',
+  'fitness_gym': '#F4511E',
+  'it_software': '#5C6BC0',
   retail: '#FF80AB',
-  'fashion-clothing': '#C2185B',
-  'home-services': '#00ACC1',
+  'fashion_clothing': '#C2185B',
+  'home_services': '#00ACC1',
   automotive: '#78909C',
-  'travel-tourism': '#4FC3F7',
+  'travel_tourism': '#4FC3F7',
 };
 
 function getCategoryIcon(slug: string): keyof typeof Ionicons.glyphMap {
@@ -184,7 +184,7 @@ export default function HomeScreen() {
   });
   const { data: techData, refetch: refetchTech } = useQuery({
     queryKey: ['home-tech'],
-    queryFn: () => businessApi.list({ category: 'it-software', per_page: 8 }),
+    queryFn: () => businessApi.list({ category: 'it_software', per_page: 8 }),
   });
 
   const { data: homeEssentialsData, refetch: refetchRetail } = useQuery({
@@ -194,7 +194,7 @@ export default function HomeScreen() {
 
   const { data: groomingData, refetch: refetchGrooming } = useQuery({
     queryKey: ['home-grooming'],
-    queryFn: () => businessApi.list({ category: 'grooming-for-men', per_page: 8 }),
+    queryFn: () => businessApi.list({ category: 'grooming_for_men', per_page: 8 }),
   });
 
   const { data: beautyData, refetch: refetchBeauty } = useQuery({
@@ -310,7 +310,7 @@ export default function HomeScreen() {
             title="Tech & Software"
             subtitle="IT services & solutions"
             items={techData?.items ?? []}
-            seeAllRoute="/category/it-software"
+            seeAllRoute="/category/it_software"
           />
 
           <RoundShelfSection
@@ -324,7 +324,7 @@ export default function HomeScreen() {
             title="Grooming for Men"
             subtitle="Barbershops & salons"
             items={groomingData?.items ?? []}
-            seeAllRoute="/category/grooming-for-men"
+            seeAllRoute="/category/grooming_for_men"
           />
         </View>
       </ScrollView>

@@ -12,7 +12,7 @@ import { useAuthStore } from '../../store/authStore';
 import { Colors, Gradients } from '../../constants/Colors';
 import { BusinessCard } from '../../types';
 import { API_BASE_URL } from '../../constants/api';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 
 const { width: W } = Dimensions.get('window');
 const CARD_WIDTH = (W - 48) / 2;

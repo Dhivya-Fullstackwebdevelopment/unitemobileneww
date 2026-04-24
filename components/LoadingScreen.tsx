@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { Colors } from '../constants/Colors';
-import { THEME } from './Reuse.tsx/Reusecolor';
+import { THEME } from './Reuse/Reusecolor';
 
 interface Props {
   message?: string;

@@ -26,7 +26,7 @@ import { Colors, Gradients } from '../../constants/Colors';
 import { API_BASE_URL } from '../../constants/api';
 import { BookingCreate, ServiceOut } from '../../types';
 import { useFavoritesStore } from '../../store/favoritesStore';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';

@@ -20,7 +20,7 @@ import SearchBar from '../../components/SearchBar';
 import BusinessCard from '../../components/BusinessCard';
 import LoadingScreen from '../../components/LoadingScreen';
 import { BusinessFilters } from '../../types';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 
 type SortOption = 'featured' | 'rating' | 'newest' | 'name';
 

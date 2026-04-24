@@ -13,7 +13,7 @@ import { businessApi } from '../../lib/apiClient';
 import { useAuthStore } from '../../store/authStore';
 import { useFavoritesStore } from '../../store/favoritesStore';
 import { Colors, Gradients } from '../../constants/Colors';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 import Toast from 'react-native-toast-message';
 
 const C = Colors;

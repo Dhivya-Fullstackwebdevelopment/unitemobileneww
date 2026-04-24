@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
-import { THEME } from './Reuse.tsx/Reusecolor';
+import { THEME } from './Reuse/Reusecolor';
 
 interface Props {
   value?: string;

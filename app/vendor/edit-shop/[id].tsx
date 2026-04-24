@@ -12,7 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { businessApi, catalogApi, commonApi } from '../../../lib/apiClient';
 import { Colors, Gradients } from '../../../constants/Colors';
 import { API_BASE_URL } from '../../../constants/api';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 import Toast from 'react-native-toast-message';
 
 const DEFAULT_HOURS = {

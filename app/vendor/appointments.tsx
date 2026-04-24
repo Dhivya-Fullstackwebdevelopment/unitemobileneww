@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { bookingApi } from '../../lib/apiClient';
 import { Colors } from '../../constants/Colors';
 import { BookingOut } from '../../types';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 
 function StatusBadge({ status }: { status: BookingOut['status'] }) {
   const isPending = status === 'pending';

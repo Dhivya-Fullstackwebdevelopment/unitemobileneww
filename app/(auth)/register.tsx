@@ -24,7 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
 import { catalogApi, commonApi } from '../../lib/apiClient';
 import { Colors, Gradients } from '../../constants/Colors';
-import { THEME } from '@/components/Reuse.tsx/Reusecolor';
+import { THEME } from '@/components/Reuse/Reusecolor';
 
 const C = Colors;
 
