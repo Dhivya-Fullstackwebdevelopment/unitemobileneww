@@ -25,6 +25,8 @@ import { useAuthStore } from '../../store/authStore';
 import { catalogApi, commonApi } from '../../lib/apiClient';
 import { Colors, Gradients } from '../../constants/Colors';
 import { THEME } from '@/components/Reuse/Reusecolor';
+import { z } from 'zod';
+
 
 const C = Colors;
 
@@ -32,7 +34,7 @@ const C = Colors;
 function Field({
   icon, label, value, onChange, placeholder,
   secure, keyboardType, returnKeyType, onSubmit,
-  inputRef, rightChild, required,
+  inputRef, rightChild, required, error,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
@@ -46,6 +48,7 @@ function Field({
   inputRef?: React.RefObject<TextInput>;
   rightChild?: React.ReactNode;
   required?: boolean;
+  error?: string;  // ✅ added here properly
 }) {
   const [focused, setFocused] = useState(false);
   return (
@@ -56,12 +59,16 @@ function Field({
       <View style={[
         fs.box,
         {
-          borderColor: focused ? THEME.primary : C.border,
-          backgroundColor: focused ? '#FAFBFF' : C.divider,
+          borderColor: error ? C.error : focused ? THEME.primary : C.border,
+          backgroundColor: error ? '#FFF5F5' : focused ? '#FAFBFF' : C.divider,
         },
       ]}>
         <View style={[fs.iconWrap, { backgroundColor: focused ? C.primaryBg : 'transparent' }]}>
-          <Ionicons name={icon} size={17} color={focused ? THEME.primary : C.textMuted} />
+          <Ionicons
+            name={icon}
+            size={17}
+            color={error ? C.error : focused ? THEME.primary : C.textMuted}
+          />
         </View>
         <TextInput
           ref={inputRef}
@@ -80,6 +87,12 @@ function Field({
         />
         {rightChild}
       </View>
+      {error ? (
+        <View style={fs.errorRow}>
+          <Ionicons name="alert-circle" size={12} color={C.error} />
+          <Text style={[fs.errorMsg, { color: C.error }]}>{error}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -94,11 +107,13 @@ const fs = StyleSheet.create({
   },
   iconWrap: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   input: { flex: 1, fontSize: 14, fontWeight: '500', paddingVertical: 10 },
+  errorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 },
+  errorMsg: { fontSize: 11, fontWeight: '600' },
 });
 
 // ── Select / picker row ───────────────────────────────────────────────────────
 function SelectField({
-  icon, label, value, placeholder, onPress, required,
+  icon, label, value, placeholder, onPress, required, error,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
@@ -106,6 +121,7 @@ function SelectField({
   placeholder: string;
   onPress: () => void;
   required?: boolean;
+  error?: string;  // ✅ ADD
 }) {
   return (
     <View style={fs.wrap}>
@@ -113,12 +129,15 @@ function SelectField({
         {label}{required && <Text style={{ color: C.error }}> *</Text>}
       </Text>
       <TouchableOpacity
-        style={[fs.box, { borderColor: C.border, backgroundColor: C.divider }]}
+        style={[fs.box, {
+          borderColor: error ? C.error : C.border,  // ✅ red border
+          backgroundColor: error ? '#FFF5F5' : C.divider,
+        }]}
         onPress={onPress}
         activeOpacity={0.8}
       >
         <View style={[fs.iconWrap, { backgroundColor: 'transparent' }]}>
-          <Ionicons name={icon} size={17} color={value ? C.primary : C.textMuted} />
+          <Ionicons name={icon} size={17} color={error ? C.error : value ? C.primary : C.textMuted} />
         </View>
         <Text style={[
           { flex: 1, fontSize: 14, fontWeight: value ? '500' : '400', paddingVertical: 10 },
@@ -128,13 +147,20 @@ function SelectField({
         </Text>
         <Ionicons name="chevron-down" size={16} color={C.textMuted} style={{ marginRight: 10 }} />
       </TouchableOpacity>
+      {/* ✅ Error message */}
+      {error ? (
+        <View style={fs.errorRow}>
+          <Ionicons name="alert-circle" size={12} color={C.error} />
+          <Text style={[fs.errorMsg, { color: C.error }]}>{error}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 // ── Document upload tile ──────────────────────────────────────────────────────
 function DocTile({
-  icon, label, subtitle, uri, onPress, uploading, required,
+  icon, label, subtitle, uri, onPress, uploading, required, error,  // ← added here
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
@@ -143,6 +169,7 @@ function DocTile({
   onPress: () => void;
   uploading?: boolean;
   required?: boolean;
+  error?: string;
 }) {
   return (
     <TouchableOpacity
@@ -150,7 +177,9 @@ function DocTile({
         docTile.wrap,
         uri
           ? { borderColor: C.success, backgroundColor: '#F0FDF4' }
-          : { borderColor: C.border, backgroundColor: C.divider },
+          : error
+            ? { borderColor: C.error, backgroundColor: '#FFF5F5' }
+            : { borderColor: C.border, backgroundColor: C.divider },
       ]}
       onPress={onPress}
       activeOpacity={0.88}
@@ -158,11 +187,11 @@ function DocTile({
       {uri ? (
         <Image source={{ uri }} style={docTile.thumb} />
       ) : (
-        <View style={[docTile.iconBox, { backgroundColor: uri ? '#DCFCE7' : C.primaryBg }]}>
+        <View style={[docTile.iconBox, { backgroundColor: C.primaryBg }]}>
           {uploading ? (
             <ActivityIndicator color={C.primary} size="small" />
           ) : (
-            <Ionicons name={icon} size={22} color={uri ? C.success : C.primary} />
+            <Ionicons name={icon} size={22} color={C.primary} />
           )}
         </View>
       )}
@@ -171,8 +200,10 @@ function DocTile({
           {label}
           {required && <Text style={{ color: C.error }}> *</Text>}
         </Text>
-        <Text style={[docTile.sub, { color: uri ? C.success : C.textMuted }]}>
-          {uri ? '✓ Uploaded successfully' : subtitle}
+        <Text style={[docTile.sub, {
+          color: uri ? C.success : error ? C.error : C.textMuted,
+        }]}>
+          {uri ? '✓ Uploaded successfully' : error ? error : subtitle}
         </Text>
       </View>
       <View style={[
@@ -252,6 +283,38 @@ const STEPS = [
   { id: 3, label: 'Docs', icon: 'document-text-outline' as const },
 ];
 
+const step1Schema = z.object({
+  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  email: z.string().email('Enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPw: z.string().min(1, 'Please confirm your password'),
+}).refine(data => data.password === data.confirmPw, {
+  message: 'Passwords do not match',
+  path: ['confirmPw'],
+});
+
+// ✅ Zod schema for step 2
+const step2Schema = z.object({
+  bizName: z.string().min(1, 'Business name is required'),
+  catId: z.union([z.number(), z.null()])
+    .refine(v => v !== null, { message: 'Please select a category' }),
+  govId: z.union([z.number(), z.null()])
+    .refine(v => v !== null, { message: 'Please select a location' }),
+});
+// ✅ Error state type
+type Step1Errors = {
+  fullName?: string;
+  email?: string;
+  password?: string;
+  confirmPw?: string;
+};
+
+type Step2Errors = {
+  bizName?: string;
+  catId?: string;
+  govId?: string;
+};
+
 export default function RegisterScreen() {
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);    // success state
@@ -284,9 +347,14 @@ export default function RegisterScreen() {
   const [uploadingTrade, setUploadingTrade] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
-
+  const [errors1, setErrors1] = useState<Step1Errors>({});
+  const [errors2, setErrors2] = useState<Step2Errors>({});
   const { vendorRegister } = useAuthStore();
-
+  type Step3Errors = {
+    idProofUri?: string;
+    ownerPhotoUri?: string;
+  };
+  const [errors3, setErrors3] = useState<Step3Errors>({});
   // Catalog data
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => catalogApi.categories() });
   const { data: governorates } = useQuery({ queryKey: ['governorates'], queryFn: () => catalogApi.governorates() });
@@ -346,18 +414,67 @@ export default function RegisterScreen() {
   };
 
   const goNext = () => {
-    let err: string | null = null;
-    if (step === 1) err = validateStep1();
-    if (step === 2) err = validateStep2();
-    if (err) { Alert.alert('Required', err); return; }
+    if (step === 1) {
+      const result = step1Schema.safeParse({ fullName, email, password, confirmPw });
+
+      if (!result.success) {
+        const fieldErrors: Step1Errors = {};
+
+        // ✅ Use .issues not .errors (Zod v3 API)
+        result.error.issues.forEach((issue: z.ZodIssue) => {
+          const field = issue.path[0] as keyof Step1Errors;
+          if (field && !fieldErrors[field]) {
+            fieldErrors[field] = issue.message;
+          }
+        });
+
+        setErrors1(fieldErrors);
+        return;
+      }
+
+      setErrors1({});
+    }
+
+    if (step === 2) {
+      const result = step2Schema.safeParse({ bizName, catId, govId });
+
+      if (!result.success) {
+        const fieldErrors: Step2Errors = {};
+
+        // ✅ Use .issues not .errors (Zod v3 API)
+        result.error.issues.forEach((issue: z.ZodIssue) => {
+          const field = issue.path[0] as keyof Step2Errors;
+          if (field && !fieldErrors[field]) {
+            fieldErrors[field] = issue.message;
+          }
+        });
+
+        setErrors2(fieldErrors);
+        return;
+      }
+
+      setErrors2({});
+    }
+
     setStep(s => s + 1);
   };
 
+
+
   // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
-    const err = validateStep3();
-    if (err) { Alert.alert('Required', err); return; }
+    const fieldErrors: Step3Errors = {};
+    if (!idProofUri) fieldErrors.idProofUri = 'ID Proof is mandatory. Please upload it.';
+    if (!ownerPhotoUri) fieldErrors.ownerPhotoUri = 'Owner photo is mandatory. Please upload it.';
+
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors3(fieldErrors);
+      return;
+    }
+
+    setErrors3({});
     setSubmitting(true);
+
     try {
       await vendorRegister({
         email: email.trim().toLowerCase(),
@@ -376,7 +493,9 @@ export default function RegisterScreen() {
     } catch (e: any) {
       const msg = e?.response?.data?.detail ?? e?.message ?? 'Registration failed. Please try again.';
       Alert.alert('Registration Failed', msg);
-    } finally { setSubmitting(false); }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // ── Step-by-step progress bar ──────────────────────────────────────────────
@@ -519,26 +638,30 @@ export default function RegisterScreen() {
             <View style={styles.sheetHandle} />
 
             {/* ─ Step 1: Account ─────────────────────────────────────── */}
+            {/* Step 1 */}
             {step === 1 && (
               <>
                 <Text style={[styles.stepTitle, { color: C.text }]}>Account Details</Text>
                 <Text style={[styles.stepSub, { color: C.textSecondary }]}>
                   Your login credentials for the vendor portal
                 </Text>
-
                 <Field
                   icon="person-outline" label="Full Name" value={fullName}
-                  onChange={setFullName} placeholder="e.g. Ahmed Al Rashdi" required
+                  onChange={v => { setFullName(v); setErrors1(e => ({ ...e, fullName: undefined })); }}
+                  placeholder="e.g. Ahmed Al Rashdi" required
+                  error={errors1.fullName}  // ✅
                 />
                 <Field
                   icon="mail-outline" label="Email Address" value={email}
-                  onChange={setEmail} placeholder="shop@example.com"
-                  keyboardType="email-address" required
+                  onChange={v => { setEmail(v); setErrors1(e => ({ ...e, email: undefined })); }}
+                  placeholder="shop@example.com" keyboardType="email-address" required
+                  error={errors1.email}  // ✅
                 />
                 <Field
                   icon="lock-closed-outline" label="Password" value={password}
-                  onChange={setPassword} placeholder="Minimum 6 characters" secure={!showPw}
-                  required
+                  onChange={v => { setPassword(v); setErrors1(e => ({ ...e, password: undefined })); }}
+                  placeholder="Minimum 6 characters" secure={!showPw} required
+                  error={errors1.password}  // ✅
                   rightChild={
                     <TouchableOpacity onPress={() => setShowPw(v => !v)} style={{ paddingHorizontal: 12 }}>
                       <Ionicons name={showPw ? 'eye-off-outline' : 'eye-outline'} size={18} color={C.textMuted} />
@@ -547,70 +670,73 @@ export default function RegisterScreen() {
                 />
                 <Field
                   icon="shield-checkmark-outline" label="Confirm Password" value={confirmPw}
-                  onChange={setConfirmPw} placeholder="Re-enter password" secure={!showConfirm}
-                  required
+                  onChange={v => { setConfirmPw(v); setErrors1(e => ({ ...e, confirmPw: undefined })); }}
+                  placeholder="Re-enter password" secure={!showConfirm} required
+                  error={errors1.confirmPw}  // ✅
                   rightChild={
                     <TouchableOpacity onPress={() => setShowConfirm(v => !v)} style={{ paddingHorizontal: 12 }}>
                       <Ionicons name={showConfirm ? 'eye-off-outline' : 'eye-outline'} size={18} color={C.textMuted} />
                     </TouchableOpacity>
                   }
                 />
-
-                {/* Password mismatch hint */}
-                {confirmPw.length > 0 && confirmPw !== password && (
-                  <View style={styles.errorRow}>
-                    <Ionicons name="alert-circle" size={13} color={C.error} />
-                    <Text style={[styles.errorText, { color: C.error }]}>Passwords do not match</Text>
-                  </View>
-                )}
               </>
             )}
 
-            {/* ─ Step 2: Business ────────────────────────────────────── */}
+            {/* Step 2 */}
             {step === 2 && (
               <>
                 <Text style={[styles.stepTitle, { color: C.text }]}>Business Information</Text>
                 <Text style={[styles.stepSub, { color: C.textSecondary }]}>
                   Tell us about your business
                 </Text>
-
                 <Field
                   icon="business-outline" label="Business Name" value={bizName}
-                  onChange={setBizName} placeholder="e.g. Muscat Coffee House" required
+                  onChange={v => { setBizName(v); setErrors2(e => ({ ...e, bizName: undefined })); }}
+                  placeholder="e.g. Muscat Coffee House" required
+                  error={errors2.bizName}
                 />
-                <Field
-                  icon="call-outline" label="Phone Number" value={phone}
+                <Field icon="call-outline" label="Phone Number" value={phone}
                   onChange={setPhone} placeholder="+968 XXXX XXXX" keyboardType="phone-pad"
                 />
-                <Field
-                  icon="location-outline" label="Address" value={address}
+                <Field icon="location-outline" label="Address" value={address}
                   onChange={setAddress} placeholder="Street / area address"
                 />
-
                 <SelectField
                   icon="grid-outline" label="Category" value={catLabel}
                   placeholder="Select a category"
-                  onPress={() => setShowCatPicker(true)}
+                  onPress={() => { setShowCatPicker(true); setErrors2(e => ({ ...e, catId: undefined })); }}
                   required
+                  error={errors2.catId}
                 />
                 <SelectField
                   icon="map-outline" label="Location (Governorate)" value={govLabel}
                   placeholder="Select a governorate"
-                  onPress={() => setShowGovPicker(true)}
+                  onPress={() => { setShowGovPicker(true); setErrors2(e => ({ ...e, govId: undefined })); }}
                   required
+                  error={errors2.govId}
                 />
 
-                {/* Pickers */}
+                {/* ✅ ADD THESE — modals were missing from the JSX */}
                 <PickerModal
-                  visible={showCatPicker} title="Select Category"
+                  visible={showCatPicker}
+                  title="Select Category"
                   items={catItems}
-                  onSelect={item => { setCatId(item.id); setCatLabel(item.label); }}
+                  onSelect={item => {
+                    setCatId(item.id);
+                    setCatLabel(item.label);
+                    setErrors2(e => ({ ...e, catId: undefined }));
+                  }}
                   onClose={() => setShowCatPicker(false)}
                 />
                 <PickerModal
-                  visible={showGovPicker} title="Select Governorate"
+                  visible={showGovPicker}
+                  title="Select Governorate"
                   items={govItems}
-                  onSelect={item => { setGovId(item.id); setGovLabel(item.label); }}
+                  onSelect={item => {
+                    setGovId(item.id);
+                    setGovLabel(item.label);
+                    setErrors2(e => ({ ...e, govId: undefined }));
+                  }}
                   onClose={() => setShowGovPicker(false)}
                 />
               </>
@@ -619,22 +745,25 @@ export default function RegisterScreen() {
             {/* ─ Step 3: Documents ───────────────────────────────────── */}
             {step === 3 && (
               <>
-                <Text style={[styles.stepTitle, { color: C.text }]}>Verification Documents</Text>
-                <Text style={[styles.stepSub, { color: C.textSecondary }]}>
-                  Required for admin approval. Keeps the directory trustworthy.
-                </Text>
-
                 <DocTile
                   icon="card-outline" label="ID Proof" required
                   subtitle="National ID or passport (image)"
                   uri={idProofUri} uploading={uploadingId}
-                  onPress={() => pickAndUpload(setIdProofUri, setUploadingId)}
+                  onPress={() => {
+                    pickAndUpload(setIdProofUri, setUploadingId);
+                    setErrors3(e => ({ ...e, idProofUri: undefined }));
+                  }}
+                  error={errors3.idProofUri}  // ✅
                 />
                 <DocTile
                   icon="person-circle-outline" label="Owner Photo" required
                   subtitle="Clear photo of the business owner"
                   uri={ownerPhotoUri} uploading={uploadingPhoto}
-                  onPress={() => pickAndUpload(setOwnerPhotoUri, setUploadingPhoto)}
+                  onPress={() => {
+                    pickAndUpload(setOwnerPhotoUri, setUploadingPhoto);
+                    setErrors3(e => ({ ...e, ownerPhotoUri: undefined }));
+                  }}
+                  error={errors3.ownerPhotoUri}  // ✅
                 />
                 <DocTile
                   icon="document-outline" label="Trade License"
@@ -642,14 +771,6 @@ export default function RegisterScreen() {
                   uri={tradeUri} uploading={uploadingTrade}
                   onPress={() => pickAndUpload(setTradeUri, setUploadingTrade)}
                 />
-
-                {/* Info note */}
-                <View style={[styles.infoBox, { backgroundColor: C.primaryBg, borderColor: C.primaryBgDeep }]}>
-                  <Ionicons name="shield-checkmark" size={16} color={C.primary} />
-                  <Text style={[styles.infoText, { color: C.textSecondary }]}>
-                    Documents are reviewed by admins only. Your business will go live within 24–48 hours after approval.
-                  </Text>
-                </View>
               </>
             )}
 
