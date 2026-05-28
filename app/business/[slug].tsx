@@ -30,6 +30,7 @@ import { THEME } from '@/components/Reuse/Reusecolor';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';
+import { useAuthStore } from '@/store/authStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HERO_HEIGHT = 300;
@@ -210,6 +211,20 @@ export default function BusinessDetailScreen() {
   const { isFavorite, toggleFavorite } = useFavoritesStore();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [errors, setErrors] = useState<any>({});
+  const { token } = useAuthStore();
+  const isLoggedIn = !!token;
+
+  const requireLogin = (action: () => void) => {
+    if (isLoggedIn) {
+      action();
+    } else {
+      // Pass current slug so login can return here
+      router.push({
+        pathname: '/(auth)/login',
+        params: { returnTo: `/business/${slug}` },
+      });
+    }
+  };
 
   const { data: business, isLoading, error } = useQuery({
     queryKey: ['business', slug],
@@ -494,7 +509,7 @@ export default function BusinessDetailScreen() {
             {/* Quick action buttons */}
             <View style={styles.quickActions}>
               {business.whatsapp && (
-                <TouchableOpacity style={styles.qaWhatsApp} onPress={handleWhatsApp} activeOpacity={0.85}>
+                <TouchableOpacity style={styles.qaWhatsApp} onPress={() => requireLogin(handleWhatsApp)} activeOpacity={0.85}>
                   <Ionicons name="logo-whatsapp" size={18} color="#FFF" />
                   <Text style={styles.qaText}>WhatsApp</Text>
                 </TouchableOpacity>
@@ -502,7 +517,7 @@ export default function BusinessDetailScreen() {
               {business.phone && (
                 <TouchableOpacity
                   style={[styles.qaCall, { backgroundColor: THEME.primary }]}
-                  onPress={handleCall}
+                  onPress={() => requireLogin(handleCall)}
                   activeOpacity={0.85}
                 >
                   <Ionicons name="call" size={17} color="#FFF" />
@@ -675,7 +690,15 @@ export default function BusinessDetailScreen() {
             {/* Call for Enquiry card */}
             <TouchableOpacity
               style={[styles.enquiryCard, { borderColor: C.border, backgroundColor: C.background }]}
-              onPress={business.phone ? handleCall : handleWhatsApp}
+              onPress={() =>
+                requireLogin(() => {
+                  if (business.phone) {
+                    handleCall();
+                  } else {
+                    handleWhatsApp();
+                  }
+                })
+              }
               activeOpacity={0.8}
             >
               <View style={[styles.enquiryIcon, { backgroundColor: '#FEF3C7' }]}>
@@ -769,7 +792,7 @@ export default function BusinessDetailScreen() {
               {business.phone && (
                 <TouchableOpacity
                   style={[styles.contactBtnCall, { backgroundColor: THEME.primary }]}
-                  onPress={handleCall}
+                  onPress={() => requireLogin(handleCall)}
                   activeOpacity={0.85}
                 >
                   <Ionicons name="call" size={19} color="#FFF" />
@@ -881,7 +904,7 @@ export default function BusinessDetailScreen() {
               action={
                 <TouchableOpacity
                   style={[styles.writeReviewBtn, { borderColor: THEME.primary, backgroundColor: THEME.light }]}
-                  onPress={() => setShowReviewForm(!showReviewForm)}
+                  onPress={() => requireLogin(() => setShowReviewForm(!showReviewForm))}
                 >
                   <Ionicons name="create-outline" size={13} color={THEME.primary} />
                   <Text style={[styles.writeReviewText, { color: THEME.primary }]}>Write Review</Text>
@@ -1117,7 +1140,7 @@ export default function BusinessDetailScreen() {
           </View>
           <TouchableOpacity
             style={styles.bookNowWrap}
-            onPress={() => setShowBooking(true)}
+            onPress={() => requireLogin(() => setShowBooking(true))}
             activeOpacity={0.88}
           >
             <LinearGradient

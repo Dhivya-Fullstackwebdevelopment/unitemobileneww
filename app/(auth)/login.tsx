@@ -23,6 +23,7 @@ import { Colors, Gradients } from '../../constants/Colors';
 import { THEME } from '@/components/Reuse/Reusecolor';
 import { z } from 'zod';
 import Toast from 'react-native-toast-message';
+import { useLocalSearchParams } from 'expo-router';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -92,13 +93,16 @@ export default function LoginScreen() {
   const { login, isLoading } = useAuthStore();
   const C = Colors;
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const params = useLocalSearchParams<{ returnTo?: string }>();
 
 
   const handleLogin = async () => {
-  
     setErrors({});
 
-    const result = loginSchema.safeParse({ email: email.trim().toLowerCase(), password });
+    const result = loginSchema.safeParse({
+      email: email.trim().toLowerCase(),
+      password
+    });
 
     if (!result.success) {
       const fieldErrors: { email?: string; password?: string } = {};
@@ -107,16 +111,60 @@ export default function LoginScreen() {
         if (err.path[0] === 'password') fieldErrors.password = err.message;
       });
       setErrors(fieldErrors);
-
-      const firstError = result.error.issues[0];
       Toast.show({
         type: 'error',
         text1: 'Validation Error',
-        text2: firstError.message,
+        text2: result.error.issues[0].message,
         position: 'top',
         visibilityTime: 3000,
       });
       return;
+    }
+
+    const STATIC_CUSTOMER_EMAIL = 'dhivyatest1@gmail.com';
+    const STATIC_CUSTOMER_PASSWORD = 'Dhivya@12';
+
+    if (!isVendorMode) {
+      if (
+        result.data.email === STATIC_CUSTOMER_EMAIL &&
+        result.data.password === STATIC_CUSTOMER_PASSWORD
+      ) {
+        // Save user to store so sidebar shows name
+        useAuthStore.getState().setUser({
+          name_en: 'Dhivya Test 1',
+          email: STATIC_CUSTOMER_EMAIL,
+          role: 'customer',
+          token: 'static-customer-token',
+        });
+
+        Toast.show({
+          type: 'success',
+          text1: 'Welcome Back, Dhivya! 👋',
+          text2: 'Redirecting...',
+          position: 'top',
+          visibilityTime: 1500,
+        });
+
+        setTimeout(() => {
+          if (params.returnTo) {
+            router.replace(params.returnTo as any);
+          } else if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)');
+          }
+        }, 600);
+        return;
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed ❌',
+          text2: 'Invalid email or password.',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+        return;
+      }
     }
 
     try {
@@ -124,13 +172,22 @@ export default function LoginScreen() {
       Toast.show({
         type: 'success',
         text1: 'Welcome Back! 🎉',
-        text2: isVendorMode ? 'Vendor portal loading...' : 'Redirecting to dashboard...',
+        text2: 'Vendor portal loading...',
         position: 'top',
         visibilityTime: 2000,
       });
-      router.replace('/(tabs)');
+      if (params.returnTo) {
+        router.replace(params.returnTo as any);
+      } else if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (err: any) {
-      const errorMsg = err?.response?.data?.detail || err?.message || 'Invalid credentials. Please try again.';
+      const errorMsg =
+        err?.response?.data?.detail ||
+        err?.message ||
+        'Invalid credentials. Please try again.';
       Toast.show({
         type: 'error',
         text1: 'Login Failed ❌',
@@ -480,7 +537,7 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <Toast/>
+      <Toast />
     </View>
   );
 }

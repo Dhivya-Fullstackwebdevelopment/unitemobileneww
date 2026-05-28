@@ -100,6 +100,7 @@ export default function Sidebar() {
     { icon: 'heart-outline', label: 'Favourites', path: '/(tabs)/profile' },
     { icon: 'settings-outline', label: 'Settings', path: '/(tabs)/profile' },
   ];
+  
 
   return (
     <>
