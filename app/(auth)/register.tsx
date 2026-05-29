@@ -369,28 +369,68 @@ export default function RegisterScreen() {
 
   // ── Image picker + upload ──────────────────────────────────────────────────
   const pickAndUpload = async (
+    type: 'idProof' | 'ownerPhoto' | 'tradeLicense',
     setUri: (u: string) => void,
     setLoading: (b: boolean) => void,
   ) => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
     if (!permission.granted) {
-      Alert.alert('Permission needed', 'Please allow access to your photo library.');
+      Alert.alert(
+        'Permission Needed',
+        'Please allow access to your photo library.'
+      );
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-      allowsEditing: true,
-    });
-    if (result.canceled || !result.assets?.length) return;
+
+    let result;
+
+    // Owner photo → allow crop
+    if (type === 'ownerPhoto') {
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+    }
+    // ID Proof & Trade License → no crop
+    else {
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.8,
+      });
+    }
+
+    if (result.canceled || !result.assets?.length) {
+      return;
+    }
+
     const asset = result.assets[0];
+
     setLoading(true);
+
     try {
-      const res = await commonApi.upload(asset.uri, asset.fileName ?? 'upload.jpg', asset.mimeType ?? 'image/jpeg');
+      const res = await commonApi.upload(
+        asset.uri,
+        asset.fileName ?? 'upload.jpg',
+        asset.mimeType ?? 'image/jpeg'
+      );
+
       setUri(res.url);
-    } catch {
-      Alert.alert('Upload Failed', 'Could not upload file. Please try again.');
-    } finally { setLoading(false); }
+
+      Alert.alert('Success', 'File uploaded successfully');
+    } catch (error) {
+      console.log('Upload Error:', error);
+
+      Alert.alert(
+        'Upload Failed',
+        'Could not upload file. Please try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ── Step validation ────────────────────────────────────────────────────────
