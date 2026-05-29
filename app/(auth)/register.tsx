@@ -369,11 +369,13 @@ export default function RegisterScreen() {
 
   // ── Image picker + upload ──────────────────────────────────────────────────
   const pickAndUpload = async (
-    type: 'idProof' | 'ownerPhoto' | 'tradeLicense',
-    setUri: (u: string) => void,
-    setLoading: (b: boolean) => void,
-  ) => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  type: 'idProof' | 'ownerPhoto' | 'tradeLicense',
+  setUri: (u: string) => void,
+  setLoading: (b: boolean) => void,
+) => {
+  try {
+    const permission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
       Alert.alert(
@@ -385,17 +387,14 @@ export default function RegisterScreen() {
 
     let result;
 
-    // Owner photo → allow crop
     if (type === 'ownerPhoto') {
       result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
+        allowsEditing: false,
         aspect: [1, 1],
         quality: 0.8,
       });
-    }
-    // ID Proof & Trade License → no crop
-    else {
+    } else {
       result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: false,
@@ -409,29 +408,55 @@ export default function RegisterScreen() {
 
     const asset = result.assets[0];
 
+    const fileName =
+      asset.fileName || `${type}-${Date.now()}.jpg`;
+
+    const mimeType =
+      asset.mimeType || 'image/jpeg';
+
+    console.log('TYPE:', type);
+    console.log('URI:', asset.uri);
+    console.log('FILE NAME:', fileName);
+    console.log('MIME TYPE:', mimeType);
+
     setLoading(true);
 
-    try {
-      const res = await commonApi.upload(
-        asset.uri,
-        asset.fileName ?? 'upload.jpg',
-        asset.mimeType ?? 'image/jpeg'
-      );
+    const response = await commonApi.upload(
+      asset.uri,
+      fileName,
+      mimeType
+    );
 
-      setUri(res.url);
+    console.log('UPLOAD RESPONSE:', response);
 
-      Alert.alert('Success', 'File uploaded successfully');
-    } catch (error) {
-      console.log('Upload Error:', error);
-
+    if (!response?.url) {
       Alert.alert(
         'Upload Failed',
-        'Could not upload file. Please try again.'
+        'No URL returned from server'
       );
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+
+    setUri(response.url);
+
+    Alert.alert(
+      'Success',
+      'Image uploaded successfully'
+    );
+  } catch (error: any) {
+    console.log('FULL ERROR:', error);
+    console.log('ERROR RESPONSE:', error?.response?.data);
+
+    Alert.alert(
+      'Upload Failed',
+      error?.response?.data?.detail ||
+      error?.message ||
+      'Something went wrong while uploading.'
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ── Step validation ────────────────────────────────────────────────────────
   const validateStep1 = (): string | null => {
@@ -796,30 +821,52 @@ export default function RegisterScreen() {
             {step === 3 && (
               <>
                 <DocTile
-                  icon="card-outline" label="ID Proof" required
+                  icon="card-outline"
+                  label="ID Proof"
+                  required
                   subtitle="National ID or passport (image)"
-                  uri={idProofUri} uploading={uploadingId}
+                  uri={idProofUri}
+                  uploading={uploadingId}
                   onPress={() => {
-                    pickAndUpload(setIdProofUri, setUploadingId);
+                    pickAndUpload(
+                      'idProof',
+                      setIdProofUri,
+                      setUploadingId
+                    );
                     setErrors3(e => ({ ...e, idProofUri: undefined }));
                   }}
-                  error={errors3.idProofUri}  // ✅
+                  error={errors3.idProofUri}
                 />
                 <DocTile
-                  icon="person-circle-outline" label="Owner Photo" required
+                  icon="person-circle-outline"
+                  label="Owner Photo"
+                  required
                   subtitle="Clear photo of the business owner"
-                  uri={ownerPhotoUri} uploading={uploadingPhoto}
+                  uri={ownerPhotoUri}
+                  uploading={uploadingPhoto}
                   onPress={() => {
-                    pickAndUpload(setOwnerPhotoUri, setUploadingPhoto);
+                    pickAndUpload(
+                      'ownerPhoto',
+                      setOwnerPhotoUri,
+                      setUploadingPhoto
+                    );
                     setErrors3(e => ({ ...e, ownerPhotoUri: undefined }));
                   }}
-                  error={errors3.ownerPhotoUri}  // ✅
+                  error={errors3.ownerPhotoUri}
                 />
                 <DocTile
-                  icon="document-outline" label="Trade License"
+                  icon="document-outline"
+                  label="Trade License"
                   subtitle="Optional — commercial registration document"
-                  uri={tradeUri} uploading={uploadingTrade}
-                  onPress={() => pickAndUpload(setTradeUri, setUploadingTrade)}
+                  uri={tradeUri}
+                  uploading={uploadingTrade}
+                  onPress={() => {
+                    pickAndUpload(
+                      'tradeLicense',
+                      setTradeUri,
+                      setUploadingTrade
+                    );
+                  }}
                 />
               </>
             )}
