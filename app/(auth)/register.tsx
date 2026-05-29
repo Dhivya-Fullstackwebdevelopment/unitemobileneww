@@ -296,6 +296,10 @@ const step1Schema = z.object({
 // ✅ Zod schema for step 2
 const step2Schema = z.object({
   bizName: z.string().min(1, 'Business name is required'),
+  phone: z
+    .string()
+    .min(1, 'Phone number is required')
+    .regex(/^[0-9+\-\s()]+$/, 'Enter a valid phone number'),
   catId: z.union([z.number(), z.null()])
     .refine(v => v !== null, { message: 'Please select a category' }),
   govId: z.union([z.number(), z.null()])
@@ -311,6 +315,7 @@ type Step1Errors = {
 
 type Step2Errors = {
   bizName?: string;
+  phone?: string;
   catId?: string;
   govId?: string;
 };
@@ -436,7 +441,7 @@ export default function RegisterScreen() {
     }
 
     if (step === 2) {
-      const result = step2Schema.safeParse({ bizName, catId, govId });
+      const result = step2Schema.safeParse({ bizName, phone, catId, govId });
 
       if (!result.success) {
         const fieldErrors: Step2Errors = {};
@@ -486,7 +491,7 @@ export default function RegisterScreen() {
         id_proof_url: idProofUri,
         owner_photo_url: ownerPhotoUri,
         trade_license_url: tradeUri || null,
-        phone: phone.trim() || undefined,
+        phone: phone.trim(),
         address: address.trim() || undefined,
       });
       setDone(true);
@@ -696,7 +701,12 @@ export default function RegisterScreen() {
                   error={errors2.bizName}
                 />
                 <Field icon="call-outline" label="Phone Number" value={phone}
-                  onChange={setPhone} placeholder="+968 XXXX XXXX" keyboardType="phone-pad"
+                  onChange={v => {
+                    setPhone(v);
+                    setErrors2(e => ({ ...e, phone: undefined }));
+                  }}
+                  placeholder="+968 XXXX XXXX" keyboardType="phone-pad"
+                  error={errors2.phone}
                 />
                 <Field icon="location-outline" label="Address" value={address}
                   onChange={setAddress} placeholder="Street / area address"

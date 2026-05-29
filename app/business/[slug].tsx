@@ -320,19 +320,19 @@ export default function BusinessDetailScreen() {
     setErrors({});
     bookingMutation.mutate({
       ...bookingForm,
-      service: selectedService?.name || bookingForm.service,
+      service: selectedService?.name || "General Enquiry",
       business_id: business!.id,
     });
     console.log("Sending Booking Payload 🚀", {
       ...bookingForm,
-      service: selectedService?.name || bookingForm.service,
+      service: selectedService?.name || "General Enquiry",
       business_id: business!.id,
     });
   };
 
   const openBookingForService = (svc: ServiceOut | null = null) => {
     setSelectedService(svc);
-    setBookingForm((prev) => ({ ...prev, service: svc?.name || '' }));
+    setBookingForm((prev) => ({ ...prev, service: svc?.name || "General Enquiry" }));
     setShowBooking(true);
   };
 
@@ -1251,7 +1251,7 @@ export default function BusinessDetailScreen() {
                         onPress={() => setSelectedService(null)}
                       >
                         <Text style={[styles.serviceChipText, { color: !selectedService ? '#FFF' : C.text }]}>
-                          Any
+                          General Enquiry
                         </Text>
                       </TouchableOpacity>
                       {services.map((svc) => (

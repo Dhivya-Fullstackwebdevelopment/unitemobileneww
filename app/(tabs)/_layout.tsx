@@ -3,6 +3,7 @@ import { View, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { THEME } from '@/components/Reuse/Reusecolor';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function TabIcon({
   name,
@@ -24,11 +25,16 @@ function TabIcon({
 }
 
 export default function TabLayout() {
+    const insets = useSafeAreaInsets();
   return (
     <Tabs
-      screenOptions={{
+       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          ...styles.tabBar,
+          height: 66 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 8),
+        },
         tabBarShowLabel: true,
         tabBarLabelStyle: styles.tabLabel,
         tabBarActiveTintColor: THEME.primary,
@@ -80,7 +86,7 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: Colors.tabBar,
     borderTopWidth: 0,
-    height: Platform.OS === 'ios' ? 86 : 66,
+    height: Platform.OS === 'ios' ? 86 : 86,
     paddingBottom: Platform.OS === 'ios' ? 26 : 8,
     paddingTop: 6,
     // Floating card elevation
