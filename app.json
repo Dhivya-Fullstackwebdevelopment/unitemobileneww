@@ -32,7 +32,8 @@
           "faceIDPermission": "Allow Unite Oman to access your Face ID biometric data."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
