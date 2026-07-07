@@ -25,10 +25,10 @@ function TabIcon({
 }
 
 export default function TabLayout() {
-    const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
-       screenOptions={{
+      screenOptions={{
         headerShown: false,
         tabBarStyle: {
           ...styles.tabBar,
@@ -54,7 +54,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Search',
+          title: 'Explore',
           tabBarIcon: ({ focused }) => (
             <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} />
           ),
@@ -63,9 +63,12 @@ export default function TabLayout() {
       <Tabs.Screen
         name="bookings"
         options={{
-          title: 'Favourites',
+          title: 'Bookings',
           tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'heart' : 'heart-outline'} focused={focused} />
+            <TabIcon
+              name={focused ? 'calendar' : 'calendar-outline'}
+              focused={focused}
+            />
           ),
         }}
       />

@@ -1,254 +1,329 @@
-import React, { useEffect } from 'react';
+import { useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Image, StatusBar, Dimensions,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useFavoritesStore } from '../../store/favoritesStore';
-import { useAuthStore } from '../../store/authStore';
-import { Colors, Gradients } from '../../constants/Colors';
-import { BusinessCard } from '../../types';
-import { API_BASE_URL } from '../../constants/api';
-import { THEME } from '@/components/Reuse/Reusecolor';
+import { Colors } from '../../constants/Colors';
 
-const { width: W } = Dimensions.get('window');
-const CARD_WIDTH = (W - 48) / 2;
+type TabKey = 'upcoming' | 'completed' | 'cancelled';
+type StatusKey = 'en_route' | 'scheduled' | 'done' | 'cancelled';
 
-const C = Colors;
-
-function buildUrl(url?: string) {
-  if (!url) return undefined;
-  if (url.startsWith('http') || url.startsWith('file')) return url;
-  const path = url.startsWith('/') ? url.slice(1) : url;
-  return `${API_BASE_URL}/${path}`;
+interface Booking {
+  id: string;
+  emoji: string;
+  emojiBg: string;
+  title: string;
+  dateTime: string;
+  location: string;
+  providerInitial: string;
+  providerColor: string;
+  providerName: string;
+  price: string;
+  status: StatusKey;
+  tab: TabKey;
+  accentColor: string;
 }
 
-// ── Favorite card (grid layout) ───────────────────────────────────────────────
-function FavCard({ item, onRemove }: { item: BusinessCard; onRemove: () => void }) {
-  const cover = buildUrl(item.cover_image_url) ?? buildUrl(item.logo_url);
+const BOOKINGS: Booking[] = [
+  {
+    id: 'UO-28062025-4521',
+    emoji: '❄️',
+    emojiBg: '#EDE9FE',
+    title: 'AC Deep Cleaning',
+    dateTime: 'Sat 28 Jun · 10:00 AM',
+    location: 'Qurum',
+    providerInitial: 'M',
+    providerColor: '#8E24AA',
+    providerName: 'Mohammed A.',
+    price: 'OMR 17',
+    status: 'en_route',
+    tab: 'upcoming',
+    accentColor: '#E91E8C',
+  },
+  {
+    id: 'UO-29062025-7788',
+    emoji: '🖌️',
+    emojiBg: '#E0F2E9',
+    title: 'Home Deep Cleaning',
+    dateTime: 'Sun 29 Jun · 2:00 PM',
+    location: 'Al Khuwair',
+    providerInitial: 'S',
+    providerColor: '#3949AB',
+    providerName: 'Salim Al-Habsi',
+    price: 'OMR 37',
+    status: 'scheduled',
+    tab: 'upcoming',
+    accentColor: '#3949AB',
+  },
+  {
+    id: 'UO-25062025-1102',
+    emoji: '💅',
+    emojiBg: '#FCE4EC',
+    title: 'Beauty at Home',
+    dateTime: '25 Jun · Muscat Hills · Done',
+    location: '',
+    providerInitial: 'F',
+    providerColor: '#8E24AA',
+    providerName: 'Fatima Al-Z.',
+    price: 'OMR 45',
+    status: 'done',
+    tab: 'completed',
+    accentColor: '#22B573',
+  },
+];
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'upcoming', label: 'Upcoming' },
+  { key: 'completed', label: 'Completed' },
+  { key: 'cancelled', label: 'Cancelled' },
+];
+
+function StatusBadge({ status }: { status: StatusKey }) {
+  const map: Record<StatusKey, { label: string; bg: string; fg: string }> = {
+    en_route: { label: 'En Route', bg: '#E3F2FD', fg: '#1976D2' },
+    scheduled: { label: 'Scheduled', bg: '#FFF3D6', fg: '#B8860B' },
+    done: { label: '✓ Done', bg: '#E3F9EC', fg: '#22B573' },
+    cancelled: { label: 'Cancelled', bg: '#FDE7E7', fg: '#D32F2F' },
+  };
+  const s = map[status];
+  return (
+    <View style={[styles.badge, { backgroundColor: s.bg }]}>
+      <Text style={[styles.badgeText, { color: s.fg }]}>{s.label}</Text>
+    </View>
+  );
+}
+
+export default function MyBookingsScreen() {
+  const [activeTab, setActiveTab] = useState<TabKey>('upcoming');
+  const filtered = BOOKINGS.filter((b) => b.tab === activeTab);
+
+  const handleCardPress = (booking: Booking) => {
+    if (booking.status === 'en_route') {
+      router.push({
+        pathname: '/bookings/track',
+        params: {
+          professionalName: booking.providerName,
+          service: booking.title,
+          address: booking.location,
+        },
+      });
+    }
+  };
 
   return (
-    <TouchableOpacity
-      style={[styles.favCard, { backgroundColor: C.card }]}
-      onPress={() => router.push(`/business/${item.slug}`)}
-      activeOpacity={0.88}
-    >
-      {/* Cover image */}
-      <View style={styles.coverWrap}>
-        {cover ? (
-          <Image source={{ uri: cover }} style={styles.cover} resizeMode="cover" />
-        ) : (
-          <LinearGradient colors={Gradients.primary} style={styles.cover}>
-            <Ionicons name="business" size={30} color="rgba(255,255,255,0.6)" />
-          </LinearGradient>
-        )}
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.55)']}
-          style={StyleSheet.absoluteFill}
-        />
-        {/* Remove button */}
-        <TouchableOpacity style={styles.heartBtn} onPress={onRemove} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-          <Ionicons name="heart" size={17} color="#EF4444" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.background }]} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+
+      {/* Header */}
+      <View style={styles.topBar}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={20} color="#1A1A1A" />
         </TouchableOpacity>
-        {/* Rating chip */}
-        {item.rating_avg > 0 && (
-          <View style={styles.ratingChip}>
-            <Ionicons name="star" size={9} color="#FBBF24" />
-            <Text style={styles.ratingText}>{item.rating_avg.toFixed(1)}</Text>
-          </View>
-        )}
+        <Text style={styles.topBarTitle}>My Bookings</Text>
+        <TouchableOpacity>
+          <Text style={styles.filterText}>Filter</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Info */}
-      <View style={styles.cardBody}>
-        <Text style={[styles.cardName, { color: C.text }]} numberOfLines={1}>
-          {item.name_en}
-        </Text>
-        <Text style={[styles.cardCategory, { color: C.textMuted }]} numberOfLines={1}>
-          {item.category?.name_en ?? '—'}
-        </Text>
-        {item.governorate?.name_en && (
-          <View style={styles.locRow}>
-            <Ionicons name="location-outline" size={10} color={C.textMuted} />
-            <Text style={[styles.locText, { color: C.textMuted }]} numberOfLines={1}>
-              {item.governorate.name_en}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+        {/* AI reminder banner */}
+        <View style={styles.reminderBanner}>
+          <Text style={styles.reminderEmoji}>✨</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.reminderTitle}>AI Reminder</Text>
+            <Text style={styles.reminderDesc}>
+              Your AC contract expires in 18 days. Book renewal for 15% off. →
             </Text>
           </View>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-// ── Empty states ──────────────────────────────────────────────────────────────
-function GuestEmpty() {
-  return (
-    <View style={styles.centerEmpty}>
-      <LinearGradient colors={[THEME.light, THEME.light]} style={[styles.emptyIconWrap, { backgroundColor: THEME.light }]}>
-        <Ionicons name="heart-outline" size={44} color={THEME.primary} />
-      </LinearGradient>
-      <Text style={[styles.emptyTitle, { color: C.text }]}>Save your favourites</Text>
-      <Text style={[styles.emptySub, { color: C.textSecondary }]}>
-        Sign in to bookmark salons, restaurants, and services you love.
-      </Text>
-      <TouchableOpacity style={styles.ctaWrap} onPress={() => router.push('/(auth)/login')}>
-        <LinearGradient colors={THEME.gradient}  style={styles.ctaBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-          <Text style={styles.ctaText}>Sign In</Text>
-          <Ionicons name="arrow-forward" size={15} color="#FFF" />
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function NoFavorites() {
-  return (
-    <View style={styles.centerEmpty}>
-      <LinearGradient colors={['#FDF2F8', '#FCE7F3']} style={styles.emptyIconWrap}>
-        <Ionicons name="heart-dislike-outline" size={44} color="#EC4899" />
-      </LinearGradient>
-      <Text style={[styles.emptyTitle, { color: C.text }]}>No favourites yet</Text>
-      <Text style={[styles.emptySub, { color: C.textSecondary }]}>
-        Tap the ♡ on any business to save it here for quick access.
-      </Text>
-      <TouchableOpacity style={styles.ctaWrap} onPress={() => router.push('/(tabs)/explore')}>
-        <LinearGradient colors={THEME.gradient} style={styles.ctaBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-          <Text style={styles.ctaText}>Explore Businesses</Text>
-          <Ionicons name="search" size={15} color="#FFF" />
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-export default function FavoritesScreen() {
-  const { isAuthenticated } = useAuthStore();
-  const { favorites, initialize, removeFavorite } = useFavoritesStore();
-
-  useEffect(() => { initialize(); }, []);
-
-  return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: C.background }]} edges={['top']}>
-      <StatusBar barStyle="dark-content" />
-
-      {/* ── Header ────────────────────────────────────────────────── */}
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.headerTitle, { color: C.text }]}>Favourites</Text>
-          {isAuthenticated && favorites.length > 0 && (
-            <Text style={[styles.headerSub, { color: C.textMuted }]}>
-              {favorites.length} saved {favorites.length === 1 ? 'place' : 'places'}
-            </Text>
-          )}
         </View>
-        <View style={[styles.heartIconBox, { backgroundColor: '#FDF2F8' }]}>
-          <Ionicons name="heart" size={22} color="#EC4899" />
-        </View>
-      </View>
 
-      {/* ── Content ───────────────────────────────────────────────── */}
-      {!isAuthenticated ? (
-        <GuestEmpty />
-      ) : favorites.length === 0 ? (
-        <NoFavorites />
-      ) : (
-        <FlatList
-          data={favorites}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          columnWrapperStyle={styles.columnWrapper}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 40 }}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <FavCard
-              item={item}
-              onRemove={() => removeFavorite(item.id)}
-            />
-          )}
-          ListHeaderComponent={
-            <View style={[styles.sortBar, { backgroundColor: C.divider }]}>
-              <Ionicons name="time-outline" size={14} color={C.textMuted} />
-              <Text style={[styles.sortText, { color: C.textMuted }]}>Recently saved</Text>
+        {/* Tabs */}
+        <View style={styles.tabsRow}>
+          {TABS.map((tab) => {
+            const active = tab.key === activeTab;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={[styles.tabBtn, active && styles.tabBtnActive]}
+                onPress={() => setActiveTab(tab.key)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.tabText, active && styles.tabTextActive]}>{tab.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Booking cards */}
+        <View style={styles.list}>
+          {filtered.length === 0 && (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No bookings here yet.</Text>
             </View>
-          }
-        />
-      )}
+          )}
+
+          {filtered.map((booking) => (
+            <TouchableOpacity
+              key={booking.id}
+              activeOpacity={booking.status === 'en_route' ? 0.8 : 1}
+              onPress={() => handleCardPress(booking)}
+              style={[styles.card, { borderLeftColor: booking.accentColor }]}
+            >
+              <View style={styles.cardTopRow}>
+                <View style={[styles.emojiWrap, { backgroundColor: booking.emojiBg }]}>
+                  <Text style={styles.emojiText}>{booking.emoji}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cardTitle}>{booking.title}</Text>
+                  <Text style={styles.cardSubtitle}>
+                    {booking.dateTime}
+                    {booking.location ? ` · ${booking.location}` : ''}
+                  </Text>
+                </View>
+                <StatusBadge status={booking.status} />
+              </View>
+
+              <View style={styles.cardBottomRow}>
+                <View style={styles.providerRow}>
+                  <View style={[styles.providerAvatar, { backgroundColor: booking.providerColor }]}>
+                    <Text style={styles.providerAvatarText}>{booking.providerInitial}</Text>
+                  </View>
+                  <Text style={styles.providerName}>{booking.providerName}</Text>
+                </View>
+
+                {booking.status === 'en_route' ? (
+                  <View style={styles.trackRow}>
+                    <Text style={styles.priceTextAccent}>{booking.price}</Text>
+                    <Text style={styles.trackDot}>·</Text>
+                    <Text style={styles.trackText}>Track →</Text>
+                  </View>
+                ) : booking.status === 'done' ? (
+                  <View style={styles.trackRow}>
+                    <Text style={styles.priceTextMuted}>{booking.price}</Text>
+                    <TouchableOpacity style={styles.rebookBtn}>
+                      <Text style={styles.rebookText}>Rebook</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <Text style={styles.priceTextBlue}>{booking.price}</Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16,
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#FFF',
   },
-  headerTitle: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
-  headerSub: { fontSize: 13, fontWeight: '500', marginTop: 2 },
-  heartIconBox: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-
-  sortBar: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 12, paddingVertical: 8,
-    borderRadius: 10, marginBottom: 12, alignSelf: 'flex-start',
+  iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  topBarTitle: { fontSize: 17, fontWeight: '800', color: '#1A1A1A', flex: 1 },
+  filterText: { fontSize: 14, fontWeight: '700', color: '#E91E8C' },
+  reminderBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#FBEAF6',
+    marginHorizontal: 16,
+    marginTop: 14,
+    marginBottom: 16,
+    borderRadius: 16,
+    padding: 14,
   },
-  sortText: { fontSize: 11, fontWeight: '600' },
-
-  columnWrapper: { gap: 12, marginBottom: 12 },
-
-  // Fav card
-  favCard: {
-    width: CARD_WIDTH, borderRadius: 18,
-    overflow: 'hidden',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+  reminderEmoji: { fontSize: 16, marginTop: 1 },
+  reminderTitle: { fontSize: 13, fontWeight: '800', color: '#E91E8C', marginBottom: 2 },
+  reminderDesc: { fontSize: 12, fontWeight: '500', color: '#6B7280', lineHeight: 17 },
+  tabsRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F1F1F4',
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 4,
+    marginBottom: 18,
   },
-  coverWrap: { height: 120, position: 'relative', alignItems: 'center', justifyContent: 'center' },
-  cover: { ...StyleSheet.absoluteFillObject },
-  heartBtn: {
-    position: 'absolute', top: 8, right: 8,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    width: 30, height: 30, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
   },
-  ratingChip: {
-    position: 'absolute', bottom: 8, left: 8,
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8,
+  tabBtnActive: { backgroundColor: '#8E24AA' },
+  tabText: { fontSize: 13, fontWeight: '700', color: '#9E9E9E' },
+  tabTextActive: { color: '#FFF' },
+  list: { paddingHorizontal: 16, gap: 14 },
+  card: {
+    backgroundColor: '#FFF',
+    borderRadius: 18,
+    padding: 14,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+    marginBottom: 0,
   },
-  ratingText: { color: '#FFF', fontSize: 10, fontWeight: '700' },
-
-  cardBody: { padding: 10, paddingTop: 8 },
-  cardName: { fontSize: 13, fontWeight: '700', marginBottom: 2 },
-  cardCategory: { fontSize: 11, fontWeight: '500', marginBottom: 3 },
-  locRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  locText: { fontSize: 10, fontWeight: '500' },
-
-  // Empty
-  centerEmpty: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 40, gap: 14,
+  cardTopRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 12 },
+  emojiWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  emptyIconWrap: {
-    width: 96, height: 96, borderRadius: 30,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 4,
+  emojiText: { fontSize: 18 },
+  cardTitle: { fontSize: 14, fontWeight: '800', color: '#1A1A1A', marginBottom: 2 },
+  cardSubtitle: { fontSize: 11.5, fontWeight: '500', color: '#9E9E9E' },
+  badge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
+  badgeText: { fontSize: 10.5, fontWeight: '800' },
+  cardBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F3F3',
+    paddingTop: 12,
   },
-  emptyTitle: { fontSize: 22, fontWeight: '800', textAlign: 'center', letterSpacing: -0.3 },
-  emptySub: { fontSize: 14, textAlign: 'center', lineHeight: 21, fontWeight: '500' },
-  ctaWrap: { marginTop: 4, alignSelf: 'stretch', borderRadius: 14, overflow: 'hidden' },
-  ctaBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, paddingVertical: 16,
+  providerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  providerAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  ctaText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
+  providerAvatarText: { fontSize: 11.5, fontWeight: '800', color: '#FFF' },
+  providerName: { fontSize: 12.5, fontWeight: '700', color: '#1A1A1A' },
+  trackRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  priceTextAccent: { fontSize: 13, fontWeight: '800', color: '#E91E8C' },
+  priceTextMuted: { fontSize: 13, fontWeight: '700', color: '#BDBDBD' },
+  priceTextBlue: { fontSize: 13, fontWeight: '800', color: '#3949AB' },
+  trackDot: { fontSize: 13, color: '#E91E8C' },
+  trackText: { fontSize: 12.5, fontWeight: '800', color: '#E91E8C' },
+  rebookBtn: {
+    backgroundColor: '#F1F1F4',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  rebookText: { fontSize: 12, fontWeight: '700', color: '#1A1A1A' },
+  emptyState: { paddingVertical: 60, alignItems: 'center' },
+  emptyStateText: { fontSize: 13, fontWeight: '600', color: '#B0B0B0' },
 });

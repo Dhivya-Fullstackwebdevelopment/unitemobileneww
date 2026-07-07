@@ -1,347 +1,234 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  RefreshControl,
-  FlatList,
-  Image,
+  TextInput,
   StatusBar,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useQuery } from '@tanstack/react-query';
-import { businessApi, catalogApi } from '../../lib/apiClient';
 import { Colors } from '../../constants/Colors';
-import { BusinessCard as BusinessCardType } from '../../types';
-import { useSidebarStore } from '../../store/sidebarStore';
-import ShelfCard from '../../components/ShelfCard';
+import { THEME } from '@/components/Reuse/Reusecolor';
 
-const THEME_PINK = '#9660BF';
-const THEME_PINK_LIGHT = '#F3E5F5';
-const THEME_PINK_GRADIENT = ['#FF4081', '#7C4DFF'] as const;
+// Replace with the logged-in user's real first name from your auth store
+const USER_NAME = 'Ahmed';
+const DELIVERY_AREA = 'Qurum, Muscat';
 
-
-const CATEGORY_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
-  'restaurants_cafes': 'restaurant-outline',
-  'food-beverages': 'restaurant-outline',
-  'coffee-cafes': 'cafe-outline',
-  'grooming_for_men': 'cut-outline',
-  'beauty_for_women': 'flower-outline',
-  spa: 'color-wand-outline',
-  'health_wellness': 'heart-outline',
-  'fitness_gym': 'barbell-outline',
-  'it_software': 'laptop-outline',
-  electronics: 'hardware-chip-outline',
-  retail: 'bag-handle-outline',
-  'fashion_clothing': 'shirt-outline',
-  'home_services': 'home-outline',
-  'cleaning_services': 'sparkles-outline',
-  automotive: 'car-outline',
-  education: 'school-outline',
-  'travel_tourism': 'airplane-outline',
-  'realestate': 'business-outline',
-  finance: 'card-outline',
-  'legal-services': 'briefcase-outline',
-  'events-entertainment': 'musical-notes-outline',
-  photography: 'camera-outline',
-  'food-delivery': 'bicycle-outline',
-  groceries: 'cart-outline',
-  medical: 'medkit-outline',
-  pharmacy: 'medical-outline',
-  construction: 'construct-outline',
-  logistics: 'cube-outline',
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  'restaurants_cafes': '#FF5252',
-  'coffee-cafes': '#8D6E63',
-  'grooming_for_men': '#EC407A',
-  'beauty_for_women': '#D81B60',
-  spa: '#AB47BC',
-  'health_wellness': '#F06292',
-  'fitness_gym': '#F4511E',
-  'it_software': '#5C6BC0',
-  retail: '#FF80AB',
-  'fashion_clothing': '#C2185B',
-  'home_services': '#00ACC1',
-  automotive: '#78909C',
-  'travel_tourism': '#4FC3F7',
-};
-
-function getCategoryIcon(slug: string): keyof typeof Ionicons.glyphMap {
-  return CATEGORY_ICON_MAP[slug] ?? 'grid-outline';
+interface ServiceItem {
+  key: string;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  bg: string;
+  iconColor: string;
 }
 
-function getCategoryColor(slug: string): string {
-  return CATEGORY_COLORS[slug] ?? THEME_PINK;
+const SERVICES: ServiceItem[] = [
+  { key: 'ac', label: 'AC Service', icon: 'snow-outline', bg: '#E3F2FD', iconColor: '#42A5F5' },
+  { key: 'cleaning', label: 'Cleaning', icon: 'sparkles-outline', bg: '#E8F5E9', iconColor: '#66BB6A' },
+  { key: 'plumbing', label: 'Plumbing', icon: 'water-outline', bg: '#E0F7FA', iconColor: '#26C6DA' },
+  { key: 'electrical', label: 'Electrical', icon: 'flash-outline', bg: '#FFF8E1', iconColor: '#FFB300' },
+  { key: 'beauty', label: 'Beauty', icon: 'color-wand-outline', bg: '#FCE4EC', iconColor: '#EC407A' },
+  { key: 'pest', label: 'Pest', icon: 'bug-outline', bg: '#F1F8E9', iconColor: '#9CCC65' },
+  { key: 'carwash', label: 'Car Wash', icon: 'car-sport-outline', bg: '#E1F5FE', iconColor: '#29B6F6' },
+];
+
+interface ProDetails {
+  id: string;
+  name: string;
+  role: string;
+  rating: number;
+  price: number;
+  avatarColor: string;
+  initial: string;
 }
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-interface ShelfSectionProps {
-  title: string;
-  subtitle: string;
-  items: BusinessCardType[];
-  seeAllRoute?: string;
-  badge?: string;
-}
-
-function ShelfSection({ title, subtitle, items, seeAllRoute, badge }: ShelfSectionProps) {
-  if (!items || items.length === 0) return null;
-
-  return (
-    <View style={styles.shelfSection}>
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={[styles.sectionTitle, { color: Colors.text }]}>{title}</Text>
-          <Text style={[styles.sectionSub, { color: Colors.textMuted }]}>{subtitle}</Text>
-        </View>
-        {seeAllRoute && (
-          <TouchableOpacity onPress={() => router.push(seeAllRoute as any)}>
-            <Text style={[styles.seeAll, { color: THEME_PINK }]}>See all</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      <View style={styles.cardList}>
-        {items.map((item, i) => (
-          <ShelfCard key={String(item.id)} business={item} badge={badge} index={i} />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-interface RoundShelfSectionProps {
-  title: string;
-  subtitle: string;
-  items: BusinessCardType[];
-  seeAllRoute?: string;
-}
-
-function RoundShelfSection({ title, subtitle, items, seeAllRoute }: RoundShelfSectionProps) {
-  if (!items || items.length === 0) return null;
-
-  const rows: BusinessCardType[][] = [];
-  for (let i = 0; i < items.length; i += 3) {
-    rows.push(items.slice(i, i + 3));
-  }
-
-  return (
-    <View style={styles.shelfSection}>
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={[styles.sectionTitle, { color: Colors.text }]}>{title}</Text>
-          <Text style={[styles.sectionSub, { color: Colors.textMuted }]}>{subtitle}</Text>
-        </View>
-        {seeAllRoute && (
-          <TouchableOpacity onPress={() => router.push(seeAllRoute as any)}>
-            <Text style={[styles.seeAll, { color: THEME_PINK }]}>See all →</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={styles.roundGrid}>
-        {rows.map((row, ri) => (
-          <View key={ri} style={styles.roundRow}>
-            {row.map((item, ci) => (
-              <ShelfCard
-                key={String(item.id)}
-                business={item}
-                index={ri * 3 + ci}
-                round
-              />
-            ))}
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
+const TOP_RATED: ProDetails[] = [
+  { id: '1', name: 'Mohammed A.', role: 'AC Specialist', rating: 4.9, price: 15, avatarColor: '#AB47BC', initial: 'M' },
+  { id: '2', name: 'Salim Al-Habsi', role: 'Plumber', rating: 4.8, price: 8, avatarColor: '#5C6BC0', initial: 'S' },
+];
 
 export default function HomeScreen() {
-  const [refreshing, setRefreshing] = useState(false);
-  const { openSidebar } = useSidebarStore();
-
-  const { data: categories, refetch: refetchCategories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => catalogApi.categories(),
-  });
-
-  const { data: topRated, refetch: refetchTopRated } = useQuery({
-    queryKey: ['top-rated'],
-    queryFn: () => businessApi.list({ sort: 'rating', per_page: 8 }),
-  });
-
-  const { data: newData, refetch: refetchNew } = useQuery({
-    queryKey: ['home-new'],
-    queryFn: () => businessApi.list({ sort: 'newest', per_page: 8 }),
-  });
-  const { data: techData, refetch: refetchTech } = useQuery({
-    queryKey: ['home-tech'],
-    queryFn: () => businessApi.list({ category: 'it_software', per_page: 8 }),
-  });
-
-  const { data: homeEssentialsData, refetch: refetchRetail } = useQuery({
-    queryKey: ['home-essentials'],
-    queryFn: () => businessApi.list({ category: 'retail', per_page: 9 }), // multiples of 3
-  });
-
-  const { data: groomingData, refetch: refetchGrooming } = useQuery({
-    queryKey: ['home-grooming'],
-    queryFn: () => businessApi.list({ category: 'grooming_for_men', per_page: 8 }),
-  });
-
-  const { data: beautyData, refetch: refetchBeauty } = useQuery({
-    queryKey: ['home-beauty'],
-    queryFn: () => businessApi.list({ category: 'spa', per_page: 8 }),
-  });
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await Promise.all([refetchCategories(), refetchTopRated(), refetchNew(), refetchTech(),
-    refetchRetail(),
-    refetchGrooming(),
-    refetchBeauty(),]);
-    setRefreshing(false);
-  }, []);
+  const [query, setQuery] = useState('');
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.background }]} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.menuBtn} onPress={openSidebar}>
-          <View style={[styles.menuLine, { backgroundColor: THEME_PINK }]} />
-          <View style={[styles.menuLine, { width: 14, backgroundColor: THEME_PINK }]} />
-        </TouchableOpacity>
-
-        <Image
-          source={require('../../assets/logo.png')}
-          style={{ width: 120, height: 40, resizeMode: 'contain' }}
-        />
-
-        <TouchableOpacity style={styles.notifBtn}>
-          <Ionicons name="notifications-outline" size={22} color={THEME_PINK} />
-          <View style={styles.notifDot} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={THEME_PINK} />
-        }
-      >
-        <TouchableOpacity
-          style={styles.searchBar}
-          onPress={() => router.push('/(tabs)/explore')}
-          activeOpacity={0.85}
-        >
-          <View style={styles.searchLeft}>
-            <View style={[styles.searchIconWrap, { backgroundColor: THEME_PINK_LIGHT }]}>
-              <Ionicons name="search" size={17} color={THEME_PINK} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 }}>
+        {/* Top delivery bar */}
+        <View style={styles.topBar}>
+          <TouchableOpacity style={styles.deliveryWrap} activeOpacity={0.7}>
+            <Ionicons name="location-outline" size={16} color={THEME.primary} />
+            <View>
+              <Text style={styles.deliverTo}>Deliver to</Text>
+              <View style={styles.deliveryRow}>
+                <Text style={styles.deliveryArea}>{DELIVERY_AREA}</Text>
+                <Ionicons name="chevron-down" size={14} color={Colors.text} />
+              </View>
             </View>
-            <Text style={[styles.searchPlaceholder, { color: Colors.textMuted }]}>
-              Search for cleaning, salons…
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.notifBtn}>
+            <Ionicons name="notifications-outline" size={22} color={Colors.text} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Greeting */}
+        <View style={styles.greetingWrap}>
+          <Text style={styles.greeting}>Good morning, {USER_NAME} 👋</Text>
+          <Text style={styles.greetingSub}>What service do you need today?</Text>
+        </View>
+
+        {/* Search bar with AI */}
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={18} color={Colors.textMuted} style={{ marginRight: 8 }} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search any service..."
+            placeholderTextColor={Colors.textMuted}
+            style={styles.searchInput}
+            onSubmitEditing={() => router.push('/(tabs)/explore')}
+          />
+          <TouchableOpacity style={styles.aiBtn} onPress={() => router.push('/(tabs)/explore')}>
+            <LinearGradient
+              colors={['#FF4081', '#7C4DFF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.aiBtnGradient}
+            >
+              <Ionicons name="sparkles" size={13} color="#FFF" />
+              <Text style={styles.aiBtnText}>AI</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        {/* Summer offer banner */}
+        <TouchableOpacity activeOpacity={0.9} onPress={() => router.push('/category/it_software')}>
+          <LinearGradient
+            colors={['#AB47BC', '#7C4DFF']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.offerCard}
+          >
+            <View style={styles.offerBadge}>
+              <Text style={styles.offerBadgeEmoji}>🏷️</Text>
+              <Text style={styles.offerBadgeText}>SUMMER OFFER</Text>
+            </View>
+            <Text style={styles.offerTitle}>AC Service — 20% Off</Text>
+            <View style={styles.offerPriceRow}>
+              <Text style={styles.offerFrom}>From</Text>
+              <Text style={styles.offerOldPrice}>OMR 20</Text>
+              <Text style={styles.offerNewPrice}>OMR 15</Text>
+            </View>
+            <TouchableOpacity style={styles.bookNowBtn}>
+              <Text style={styles.bookNowText}>Book Now</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Our Services grid */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Our Services</Text>
+            <TouchableOpacity onPress={() => router.push('/categories')}>
+              <Text style={styles.seeAll}>See All →</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.servicesGrid}>
+            {SERVICES.map((service) => (
+              <TouchableOpacity
+                key={service.key}
+                style={styles.serviceItem}
+                onPress={() => router.push(`/category/${service.key}`)}
+              >
+                <View style={[styles.serviceCircle, { backgroundColor: service.bg }]}>
+                  <Ionicons name={service.icon} size={22} color={service.iconColor} />
+                </View>
+                <Text style={styles.serviceLabel} numberOfLines={1}>
+                  {service.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity style={styles.serviceItem} onPress={() => router.push('/categories')}>
+              <LinearGradient
+                colors={['#FF4081', '#7C4DFF']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.serviceCircle}
+              >
+                <Text style={styles.moreText}>+12</Text>
+              </LinearGradient>
+              <Text style={styles.serviceLabel} numberOfLines={1}>
+                More
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* AI Pick for You */}
+        <TouchableOpacity
+          style={styles.aiPickCard}
+          activeOpacity={0.9}
+          onPress={() => router.push('/category/ac')}
+        >
+          <View style={{ flex: 1 }}>
+            <View style={styles.aiPickHeader}>
+              <Ionicons name="sparkles" size={14} color={THEME.primary} />
+              <Text style={styles.aiPickTitle}>AI Pick for You</Text>
+            </View>
+            <Text style={styles.aiPickDesc}>
+              AC service recommended before July heat — your Qurum villa needs it.
             </Text>
           </View>
-          <View style={[styles.filterBtn, { backgroundColor: THEME_PINK }]}>
-            <Ionicons name="options-outline" size={16} color="#FFF" />
-          </View>
+          <Text style={styles.aiPickCta}>Book →</Text>
         </TouchableOpacity>
 
-        {categories && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: Colors.text }]}>Categories</Text>
-              <TouchableOpacity
-                style={styles.seeAllBtn}
-                onPress={() => router.push('/categories')}
-              >
-                <Text style={[styles.seeAll, { color: THEME_PINK }]}>See all</Text>
-                <Ionicons name="chevron-forward" size={13} color={THEME_PINK} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.catGrid}>
-              {categories
-                .filter((c) => c.is_featured)
-                .slice(0, 12)
-                .map((item) => {
-                  const color = getCategoryColor(item.slug);
-
-                  return (
-                    <TouchableOpacity
-                      key={item.slug}
-                      style={styles.catItem}
-                      onPress={() => router.push(`/category/${item.slug}`)}
-                    >
-                      <View style={[styles.catCircle, { backgroundColor: `${color}15` }]}>
-                        <Ionicons name={getCategoryIcon(item.slug)} size={22} color={color} />
-                      </View>
-
-                      <Text style={styles.catName} numberOfLines={2}>
-                        {item.name_en}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-            </View>
+        {/* Top Rated Near You */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Top Rated Near You</Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/explore')}>
+              <Text style={styles.seeAll}>See All →</Text>
+            </TouchableOpacity>
           </View>
-        )}
 
-        <View style={{ paddingBottom: 110 }}>
-          <ShelfSection title="Trending" subtitle="Most popular this week" items={topRated?.items ?? []} />
-          <ShelfSection title="Just Added" subtitle="Fresh listings" items={newData?.items ?? []} badge="New" />
-          <ShelfSection
-            title="Beauty & Wellness"
-            subtitle="Spas & salons for women"
-            items={beautyData?.items ?? []}
-            seeAllRoute="/category/spa"
-          />
-
-          <ShelfSection
-            title="Tech & Software"
-            subtitle="IT services & solutions"
-            items={techData?.items ?? []}
-            seeAllRoute="/category/it_software"
-          />
-
-          <RoundShelfSection
-            title="Home Essentials"
-            subtitle="Retail & home services"
-            items={homeEssentialsData?.items ?? []}
-            seeAllRoute="/category/retail"
-          />
-
-          <ShelfSection
-            title="Grooming for Men"
-            subtitle="Barbershops & salons"
-            items={groomingData?.items ?? []}
-            seeAllRoute="/category/grooming_for_men"
-          />
+          <View style={styles.proRow}>
+            {TOP_RATED.map((pro) => (
+              <TouchableOpacity
+                key={pro.id}
+                style={styles.proCard}
+                onPress={() => router.push(`/business/${pro.id}`)}
+              >
+                <View style={[styles.proAvatar, { backgroundColor: pro.avatarColor }]}>
+                  <Text style={styles.proAvatarText}>{pro.initial}</Text>
+                </View>
+                <Text style={styles.proName} numberOfLines={1}>
+                  {pro.name}
+                </Text>
+                <Text style={styles.proRole} numberOfLines={1}>
+                  {pro.role}
+                </Text>
+                <View style={styles.proFooterRow}>
+                  <View style={styles.ratingRow}>
+                    <Ionicons name="star" size={12} color="#FFB300" />
+                    <Text style={styles.ratingText}>{pro.rating}</Text>
+                  </View>
+                  <Text style={styles.proPrice}>OMR {pro.price}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </ScrollView>
-
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push('/(tabs)/explore')}
-      >
-        <LinearGradient
-          colors={THEME_PINK_GRADIENT}
-          style={styles.fabGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Ionicons name="search" size={22} color="#FFF" />
-        </LinearGradient>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -353,15 +240,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
-  menuBtn: { width: 36, height: 36, justifyContent: 'center', gap: 5 },
-  menuLine: { height: 2.5, width: 20, borderRadius: 2 },
-  notifBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  deliveryWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  deliverTo: { fontSize: 11, fontWeight: '500', color: '#9E9E9E' },
+  deliveryRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  deliveryArea: { fontSize: 14, fontWeight: '700', color: '#1A1A1A' },
+  notifBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   notifDot: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: 8,
+    right: 8,
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -369,63 +259,141 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#FFF',
   },
+  greetingWrap: { paddingHorizontal: 20, marginTop: 8, marginBottom: 16 },
+  greeting: { fontSize: 20, fontWeight: '800', color: '#1A1A1A' },
+  greetingSub: { fontSize: 13, fontWeight: '500', color: '#9E9E9E', marginTop: 2 },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 20,
     backgroundColor: '#FFF',
     borderRadius: 16,
-    padding: 8,
-    justifyContent: 'space-between',
-    shadowColor: THEME_PINK,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#FCE4EC',
-  },
-  searchLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  searchIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  searchPlaceholder: { fontSize: 14, fontWeight: '500' },
-  filterBtn: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  section: { marginBottom: 28 },
-  shelfSection: { marginBottom: 8 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 14 },
-  sectionTitle: { fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
-  sectionSub: { fontSize: 12, fontWeight: '500', marginTop: 2 },
-  seeAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  seeAll: { fontSize: 13, fontWeight: '700' },
-  cardList: { paddingHorizontal: 16 },
-  roundGrid: { paddingHorizontal: 16, gap: 24 },
-  roundRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  catItem: {
-    width: '30%',
-    alignItems: 'center',
-  },
-  catCircle: { width: 56, height: 56, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  catName: { fontSize: 11, fontWeight: '600', textAlign: 'center', color: '#444' },
-  fab: {
-    position: 'absolute',
-    bottom: 26,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    overflow: 'hidden',
-    elevation: 8,
-    shadowColor: THEME_PINK,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
     shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
   },
-  fabGradient: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
-  catGrid: {
+  searchInput: { flex: 1, fontSize: 14, fontWeight: '500', color: '#1A1A1A', paddingVertical: 12 },
+  aiBtn: { marginLeft: 8 },
+  aiBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  aiBtnText: { fontSize: 12, fontWeight: '800', color: '#FFF' },
+  offerCard: {
+    marginHorizontal: 20,
+    marginBottom: 24,
+    borderRadius: 22,
+    padding: 20,
+    overflow: 'hidden',
+  },
+  offerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  offerBadgeEmoji: { fontSize: 11 },
+  offerBadgeText: { fontSize: 10.5, fontWeight: '800', color: '#FFF', letterSpacing: 0.4 },
+  offerTitle: { fontSize: 20, fontWeight: '800', color: '#FFF', marginBottom: 10 },
+  offerPriceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 16 },
+  offerFrom: { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '500' },
+  offerOldPrice: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '600',
+    textDecorationLine: 'line-through',
+  },
+  offerNewPrice: { fontSize: 17, color: '#FFF', fontWeight: '800' },
+  bookNowBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  bookNowText: { fontSize: 13, fontWeight: '800', color: '#8E24AA' },
+  section: { paddingHorizontal: 20, marginBottom: 24 },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: '#1A1A1A', letterSpacing: -0.2 },
+  seeAll: { fontSize: 12.5, fontWeight: '700', color: '#E91E8C' },
+  servicesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    gap: 16,
+    justifyContent: 'space-between',
   },
+  serviceItem: { width: '23%', alignItems: 'center', marginBottom: 18 },
+  serviceCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  serviceLabel: { fontSize: 10.5, fontWeight: '600', color: '#444', textAlign: 'center' },
+  moreText: { fontSize: 13, fontWeight: '800', color: '#FFF' },
+  aiPickCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 24,
+    backgroundColor: '#FBEAFB',
+    borderRadius: 18,
+    padding: 16,
+    gap: 12,
+  },
+  aiPickHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  aiPickTitle: { fontSize: 13.5, fontWeight: '800', color: '#8E24AA' },
+  aiPickDesc: { fontSize: 12, fontWeight: '500', color: '#555', lineHeight: 17 },
+  aiPickCta: { fontSize: 13, fontWeight: '800', color: '#8E24AA' },
+  proRow: { flexDirection: 'row', gap: 12 },
+  proCard: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  proAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  proAvatarText: { fontSize: 15, fontWeight: '800', color: '#FFF' },
+  proName: { fontSize: 13.5, fontWeight: '700', color: '#1A1A1A' },
+  proRole: { fontSize: 11.5, fontWeight: '500', color: '#9E9E9E', marginTop: 1, marginBottom: 10 },
+  proFooterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  ratingText: { fontSize: 12, fontWeight: '700', color: '#1A1A1A' },
+  proPrice: { fontSize: 12.5, fontWeight: '800', color: '#E91E8C' },
 });

@@ -1,548 +1,292 @@
-import React, { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
-  FlatList,
-  Dimensions,
-  ActivityIndicator,
+  StyleSheet,
+  StatusBar,
 } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { businessApi } from '../../lib/apiClient';
 import { Colors } from '../../constants/Colors';
-import ShelfCard from '../../components/ShelfCard';
-import { THEME } from '@/components/Reuse/Reusecolor';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const CATEGORY_HERO_MAP: Record<string, string> = {
-  'spa': 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=1200&q=80',
-  'cleaning': 'https://images.unsplash.com/photo-1581578731548-c64695ce6958?w=1200&q=80',
-  'it_software': 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&q=80',
-  'grooming_for_men': 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=1200&q=80',
-  'retail': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&q=80',
-  'car-rental': 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=1200&q=80',
-  'photography': 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=1200&q=80',
-};
-
-const FALLBACK_HERO = 'https://images.unsplash.com/photo-1556761175-5973dc0f32d7?w=1200&q=80';
-
-// ── Category accent color map ─────────────────────────────────────────────────
-const CATEGORY_ACCENT: Record<string, { color: string; bg: string; icon: string }> = {
-  'spa': { color: '#A855F7', bg: '#FAF5FF', icon: 'flower-outline' },
-  'cleaning': { color: '#0EA5E9', bg: '#E0F2FE', icon: 'sparkles-outline' },
-  'it_software': { color: '#6366F1', bg: '#EEF2FF', icon: 'code-slash-outline' },
-  'grooming_for_men': { color: '#F59E0B', bg: '#FFFBEB', icon: 'cut-outline' },
-  'retail': { color: '#EC4899', bg: '#FDF2F8', icon: 'bag-outline' },
-  'car-rental': { color: '#10B981', bg: '#ECFDF5', icon: 'car-outline' },
-  'photography': { color: '#EF4444', bg: '#FEF2F2', icon: 'camera-outline' },
-};
-
-const FALLBACK_ACCENT = { color: '#4338CA', bg: '#EEF2FF', icon: 'grid-outline' };
-
-// ── Section header sub-component ─────────────────────────────────────────────
-function SectionHeader({
-  icon,
-  title,
-  accent,
-  badge,
-  onSeeAll,
-}: {
-  icon: string;
+interface CategoryInfo {
   title: string;
-  accent: { color: string; bg: string };
-  badge?: string;
-  onSeeAll?: () => void;
-}) {
-  return (
-    <View style={sh.row}>
-      <View style={sh.left}>
-        <View style={[sh.iconBox, { backgroundColor: accent.bg }]}>
-          <Ionicons name={icon as any} size={16} color={accent.color} />
-        </View>
-        <Text style={sh.title}>{title}</Text>
-        {badge && (
-          <View style={[sh.badge, { backgroundColor: accent.bg }]}>
-            <Text style={[sh.badgeText, { color: accent.color }]}>{badge}</Text>
-          </View>
-        )}
-      </View>
-      {onSeeAll && (
-        <TouchableOpacity style={[sh.seeAllBtn, { borderColor: accent.color + '30' }]} onPress={onSeeAll}>
-          <Text style={[sh.seeAllText, { color: accent.color }]}>See all</Text>
-          <Ionicons name="chevron-forward" size={12} color={accent.color} />
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+  subtitle: string;
+  fromPrice: number;
+  icon: keyof typeof Ionicons.glyphMap;
+  gradient: readonly [string, string];
+  filters: string[];
 }
 
-const sh = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  left: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: { fontSize: 18, fontWeight: '800', color: Colors.text },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    marginLeft: 4,
-  },
-  badgeText: { fontSize: 11, fontWeight: '800' },
-  seeAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-    borderWidth: 1.5,
-  },
-  seeAllText: { fontSize: 12, fontWeight: '700' },
-});
-
-// ── Loading shelf skeleton ────────────────────────────────────────────────────
-function LoadingShelf() {
-  return (
-    <View style={{ paddingHorizontal: 20, flexDirection: 'row', gap: 12 }}>
-      {[0, 1].map((i) => (
-        <View
-          key={i}
-          style={{
-            width: SCREEN_WIDTH * 0.62,
-            height: 220,
-            borderRadius: 20,
-            backgroundColor: Colors.divider,
-          }}
-        />
-      ))}
-    </View>
-  );
+interface ServiceListItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  rating: number;
+  reviews?: string;
+  price: number;
+  priceSuffix?: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  iconBg: string;
+  iconColor: string;
+  tag?: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// Same static content is shown no matter which category slug is tapped.
+// Swap this out later for a real lookup (catalogApi + businessApi by slug).
+const STATIC_CATEGORY: CategoryInfo = {
+  title: 'AC Service',
+  subtitle: 'Cleaning · Repair · Installation',
+  fromPrice: 10,
+  icon: 'snow-outline',
+  gradient: ['#2979FF', '#1565C0'],
+  filters: ['All', 'Cleaning', 'Repair', 'Install'],
+};
 
-type SortKey = 'rating' | 'newest' | 'popular';
-
-const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
-  { key: 'rating', label: 'Top Rated', icon: 'star' },
-  { key: 'newest', label: 'Newest', icon: 'time-outline' },
-  { key: 'popular', label: 'Popular', icon: 'flame-outline' },
+const STATIC_SERVICES: ServiceListItem[] = [
+  {
+    id: 'ac-deep-cleaning',
+    title: 'AC Deep Cleaning',
+    subtitle: 'Filter, coil wash, drain flush',
+    rating: 4.9,
+    reviews: '2.3k',
+    price: 15,
+    icon: 'snow-outline',
+    iconBg: '#E3F2FD',
+    iconColor: '#42A5F5',
+    tag: 'Cleaning',
+  },
+  {
+    id: 'ac-repair-diagnosis',
+    title: 'AC Repair & Diagnosis',
+    subtitle: 'Gas refill, fault diagnosis',
+    rating: 4.8,
+    reviews: '1.1k',
+    price: 25,
+    icon: 'build-outline',
+    iconBg: '#FFF8E1',
+    iconColor: '#FFB300',
+    tag: 'Repair',
+  },
+  {
+    id: 'ac-annual-contract',
+    title: 'AC Annual Contract',
+    subtitle: '2 full services + priority',
+    rating: 4.9,
+    price: 89,
+    priceSuffix: '/yr',
+    icon: 'document-text-outline',
+    iconBg: '#E8F5E9',
+    iconColor: '#66BB6A',
+    tag: 'Install',
+  },
 ];
 
 export default function CategoryScreen() {
-  const { slug } = useLocalSearchParams();
-  const C = Colors;
-  const insets = useSafeAreaInsets();
-  const [activeSort, setActiveSort] = useState<SortKey>('rating');
+  // slug is still read (so the route works per-category and back navigation
+  // is correct) but is intentionally not used to change the content shown.
+  useLocalSearchParams<{ slug: string }>();
+  const [activeFilter, setActiveFilter] = useState('All');
 
-  const categoryStr = String(slug);
-  const heroUrl = CATEGORY_HERO_MAP[categoryStr] || FALLBACK_HERO;
-  const accent = CATEGORY_ACCENT[categoryStr] || FALLBACK_ACCENT;
+  const category = STATIC_CATEGORY;
+  const allServices = STATIC_SERVICES;
 
-  const formatTitle = (s: string) =>
-    s.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-
-  const { data: topRated, isLoading: topLoading } = useQuery({
-    queryKey: ['category-top', categoryStr],
-    queryFn: () => businessApi.list({ category: categoryStr, sort: 'rating', per_page: 8 }),
-  });
-
-  const { data: recent, isLoading: recentLoading } = useQuery({
-    queryKey: ['category-recent', categoryStr],
-    queryFn: () => businessApi.list({ category: categoryStr, sort: 'newest', per_page: 8 }),
-  });
-
-  const totalCount =
-    (topRated?.total ?? topRated?.items?.length ?? 0);
-
-  const goExplore = () =>
-    router.push({ pathname: '/(tabs)/explore', params: { category: categoryStr } });
+  const filteredServices = useMemo(() => {
+    if (activeFilter === 'All') return allServices;
+    return allServices.filter((s) => s.tag === activeFilter);
+  }, [activeFilter, allServices]);
 
   return (
-    <View style={[styles.container, { backgroundColor: C.background }]}>
-      <ScrollView
-        bounces={false}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
-      >
-        {/* ── Hero ──────────────────────────────────────────────── */}
-        <View style={styles.heroContainer}>
-          <Image source={{ uri: heroUrl }} style={styles.heroImage} resizeMode="cover" />
-          <LinearGradient
-            colors={['rgba(0,0,0,0.3)', 'transparent', 'rgba(0,0,0,0.82)']}
-            style={styles.heroOverlay}
-          >
-            {/* Nav */}
-            <View style={[styles.headerNav, { paddingTop: insets.top + 10 }]}>
-              <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
-                <Ionicons name="arrow-back" size={22} color="#FFF" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.navBtn} onPress={goExplore}>
-                <Ionicons name="search" size={20} color="#FFF" />
-              </TouchableOpacity>
-            </View>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.background }]} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
-            {/* Bottom text */}
-            <View style={styles.heroBottom}>
-              {/* Category label pill */}
-              <View style={[styles.categoryPill, { backgroundColor: accent.color }]}>
-                <Ionicons name={accent.icon as any} size={11} color="#FFF" />
-                <Text style={styles.categoryPillText}>
-                  {formatTitle(categoryStr).toUpperCase()}
-                </Text>
-              </View>
+      {/* Header */}
+      <View style={styles.topBar}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={20} color={Colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.topBarTitle}>AC Services</Text>
+        <TouchableOpacity style={[styles.iconBtn, styles.filterBtn]}>
+          <Ionicons name="options-outline" size={20} color={Colors.text} />
+        </TouchableOpacity>
+      </View>
 
-              <Text style={styles.heroTitle}>{formatTitle(categoryStr)}</Text>
-              <Text style={styles.heroSub}>
-                Discover the finest curated selections
-              </Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Banner */}
+        <LinearGradient
+          colors={category.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.banner}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.bannerTitle}>{category.title}</Text>
+            <Text style={styles.bannerSubtitle}>{category.subtitle}</Text>
+            <Text style={styles.bannerFrom}>From OMR {category.fromPrice}</Text>
+          </View>
+          <View style={styles.bannerIconWrap}>
+            <Ionicons name={category.icon} size={30} color="rgba(255,255,255,0.9)" />
+          </View>
+        </LinearGradient>
 
-              {/* Count pill */}
-              {totalCount > 0 && (
-                <View style={styles.countPill}>
-                  <Ionicons name="business-outline" size={13} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.countText}>{totalCount} businesses</Text>
-                </View>
-              )}
-            </View>
-          </LinearGradient>
-        </View>
-
-        {/* ── Sort chips ────────────────────────────────────────── */}
-        <View style={[styles.sortRow, { backgroundColor: C.card }]}>
-          <Text style={[styles.sortLabel, { color: C.textMuted }]}>Sort by</Text>
-          {SORT_OPTIONS.map((opt) => {
-            const active = activeSort === opt.key;
+        {/* Filter chips */}
+        <View style={styles.filterRow}>
+          {category.filters.map((filter) => {
+            const active = filter === activeFilter;
             return (
               <TouchableOpacity
-                key={opt.key}
-                style={[
-                  styles.sortChip,
-                  active
-                    ? { backgroundColor: accent.bg, borderColor: accent.color }
-                    : { backgroundColor: C.divider, borderColor: C.border },
-                ]}
-                onPress={() => setActiveSort(opt.key)}
-                activeOpacity={0.7}
+                key={filter}
+                style={[styles.filterChip, active && styles.filterChipActive]}
+                onPress={() => setActiveFilter(filter)}
               >
-                <Ionicons
-                  name={opt.icon as any}
-                  size={13}
-                  color={active ? accent.color : C.textMuted}
-                />
-                <Text
-                  style={[
-                    styles.sortChipText,
-                    { color: active ? accent.color : C.textSecondary },
-                  ]}
-                >
-                  {opt.label}
+                <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+                  {filter}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        <View style={styles.content}>
-          {/* ── Top Rated Section ─────────────────────────────── */}
-          <View style={styles.shelfSection}>
-            <SectionHeader
-              icon="star"
-              title="Top Rated"
-              accent={accent}
-              badge={topRated?.items?.length ? `${topRated.items.length}` : undefined}
-              onSeeAll={goExplore}
-            />
-            {topLoading ? (
-              <LoadingShelf />
-             ) : topRated?.items && topRated.items.length > 0 ? (
-              <FlatList
-                data={topRated.items}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => String(item.id)}
-                contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-                snapToInterval={SCREEN_WIDTH * 0.65 + 12}
-                decelerationRate="fast"
-                renderItem={({ item }) => <ShelfCard business={item} />}
-              />
-             
-            ) : (
-              <View style={styles.emptyShelf}>
-                <Ionicons name="star-outline" size={28} color={C.textMuted} />
-                <Text style={[styles.emptyShelfText, { color: C.textMuted }]}>
-                  No top-rated businesses yet
-                </Text>
-              </View>
-            )}
+        {/* Results header */}
+        <View style={styles.resultsHeader}>
+          <Text style={styles.resultsCount}>{filteredServices.length} services found</Text>
+          <View style={styles.aiSortedBadge}>
+            <Ionicons name="sparkles" size={11} color="#8E24AA" />
+            <Text style={styles.aiSortedText}>AI Sorted</Text>
           </View>
+        </View>
 
-          {/* ── Recently Added Section ────────────────────────── */}
-          <View style={styles.shelfSection}>
-            <SectionHeader
-              icon="time-outline"
-              title="Recently Added"
-              accent={{ color: '#10B981', bg: '#ECFDF5' }}
-              badge={recent?.items?.length ? `${recent.items.length}` : undefined}
-              onSeeAll={goExplore}
-            />
-            {recentLoading ? (
-              <LoadingShelf />
-            ) : recent?.items && recent.items.length > 0 ? (
-              <FlatList
-                data={recent.items}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => String(item.id)}
-                contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-                snapToInterval={SCREEN_WIDTH * 0.65 + 12}
-                decelerationRate="fast"
-                renderItem={({ item }) => <ShelfCard business={item} badge="New" />}
-              />
-            ) : (
-              <View style={styles.emptyShelf}>
-                <Ionicons name="time-outline" size={28} color={C.textMuted} />
-                <Text style={[styles.emptyShelfText, { color: C.textMuted }]}>
-                  No recent businesses yet
-                </Text>
+        {/* Service list */}
+        <View style={styles.list}>
+          {filteredServices.map((service) => (
+            <TouchableOpacity
+              key={service.id}
+              style={styles.serviceCard}
+              onPress={() => router.push(`/business/${service.id}`)}
+            >
+              <View style={[styles.serviceIconWrap, { backgroundColor: service.iconBg }]}>
+                <Ionicons name={service.icon} size={24} color={service.iconColor} />
               </View>
-            )}
-          </View>
 
-          {/* ── Explore All CTA ───────────────────────────────── */}
-          {(topRated?.items?.length || recent?.items?.length) ? (
-            <View style={{ paddingHorizontal: 20 }}>
-              <TouchableOpacity
-                style={[styles.exploreAllBtn, { borderColor: accent.color + '40' }]}
-                onPress={goExplore}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.exploreAllIcon, { backgroundColor: accent.bg }]}>
-                  <Ionicons name="grid-outline" size={18} color={accent.color} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.serviceTitle}>{service.title}</Text>
+                <Text style={styles.serviceSubtitle}>{service.subtitle}</Text>
+                <View style={styles.ratingRow}>
+                  <Ionicons name="star" size={12} color="#FFB300" />
+                  <Text style={styles.ratingText}>{service.rating}</Text>
+                  {service.reviews && <Text style={styles.reviewsText}>({service.reviews})</Text>}
                 </View>
-                <Text style={[styles.exploreAllText, { color: C.text }]}>
-                  Explore all{' '}
-                  <Text style={{ color: accent.color }}>
-                    {formatTitle(categoryStr)}
-                  </Text>{' '}
-                  listings
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color={accent.color} />
-              </TouchableOpacity>
-            </View>
-          ) : null}
-
-          {/* ── Full empty state ──────────────────────────────── */}
-          {!topLoading &&
-            !recentLoading &&
-            !topRated?.items?.length &&
-            !recent?.items?.length && (
-              <View style={[styles.emptyState, { backgroundColor: C.card }]}>
-                <View style={[styles.emptyIconWrap, { backgroundColor: accent.bg }]}>
-                  <Ionicons name={accent.icon as any} size={36} color={accent.color} />
-                </View>
-                <Text style={[styles.emptyTitle, { color: C.text }]}>Nothing here yet</Text>
-                <Text style={[styles.emptyText, { color: C.textSecondary }]}>
-                  No businesses have been listed in {formatTitle(categoryStr)} yet.{'\n'}
-                  Check back soon!
-                </Text>
-                <TouchableOpacity
-                  style={[styles.emptyBtn, { backgroundColor: accent.color }]}
-                  onPress={() => router.push('/(tabs)')}
-                >
-                  <Text style={styles.emptyBtnText}>Explore Other Categories</Text>
-                </TouchableOpacity>
               </View>
-            )}
+
+              <View style={styles.priceWrap}>
+                <Text style={styles.priceText}>OMR {service.price}</Text>
+                {service.priceSuffix && <Text style={styles.priceSuffix}>{service.priceSuffix}</Text>}
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-
-  // Hero
-  heroContainer: { height: 380, width: '100%', position: 'relative' },
-  heroImage: { width: '100%', height: '100%', position: 'absolute' },
-  heroOverlay: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 28,
-    justifyContent: 'space-between',
-  },
-  headerNav: {
+  safe: { flex: 1 },
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#FFF',
+    gap: 8,
   },
-  navBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.32)',
+  iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  filterBtn: { marginLeft: 'auto' },
+  topBarTitle: { fontSize: 16, fontWeight: '800', color: '#1A1A1A', textAlign: 'left' },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 22,
+  },
+  bannerTitle: { fontSize: 22, fontWeight: '800', color: '#FFF', marginBottom: 6 },
+  bannerSubtitle: { fontSize: 12.5, fontWeight: '500', color: 'rgba(255,255,255,0.85)', marginBottom: 10 },
+  bannerFrom: { fontSize: 13, fontWeight: '700', color: '#FFF' },
+  bannerIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
   },
-  heroBottom: { alignItems: 'flex-start' },
-  categoryPill: {
+  filterRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  categoryPillText: {
-    color: '#FFF',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  heroTitle: {
-    color: '#FFF',
-    fontSize: 36,
-    fontWeight: '800',
-    marginBottom: 6,
-    letterSpacing: 0.2,
-  },
-  heroSub: {
-    color: 'rgba(255,255,255,0.82)',
-    fontSize: 13,
-    lineHeight: 20,
-    marginBottom: 14,
-  },
-  countPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-  },
-  countText: {
-    color: 'rgba(255,255,255,0.95)',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-
-  // Sort row
-  sortRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
+    paddingVertical: 16,
   },
-  sortLabel: { fontSize: 12, fontWeight: '600', marginRight: 2 },
-  sortChip: {
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 18,
+    backgroundColor: '#F2F2F5',
+  },
+  filterChipActive: {
+    backgroundColor: '#E91E8C',
+  },
+  filterChipText: { fontSize: 12.5, fontWeight: '700', color: '#777' },
+  filterChipTextActive: { color: '#FFF' },
+  resultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 14,
+  },
+  resultsCount: { fontSize: 13, fontWeight: '700', color: '#1A1A1A' },
+  aiSortedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1.5,
+    gap: 4,
+    backgroundColor: '#FBEAFB',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
   },
-  sortChipText: { fontSize: 12, fontWeight: '700' },
-
-  // Content
-  content: { paddingTop: 28 },
-  shelfSection: { marginBottom: 36 },
-
-  // Empty shelf
-  emptyShelf: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 20,
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: Colors.divider,
-  },
-  emptyShelfText: { fontSize: 14, fontWeight: '500' },
-
-  // Explore all CTA
-  exploreAllBtn: {
+  aiSortedText: { fontSize: 11, fontWeight: '800', color: '#8E24AA' },
+  list: { paddingHorizontal: 16, gap: 12 },
+  serviceCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    padding: 16,
+    backgroundColor: '#FFF',
     borderRadius: 18,
-    borderWidth: 1.5,
-    backgroundColor: Colors.card,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
-  exploreAllIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  exploreAllText: { flex: 1, fontSize: 14, fontWeight: '600' },
-
-  // Full empty state
-  emptyState: {
-    margin: 20,
-    borderRadius: 24,
-    padding: 36,
-    alignItems: 'center',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  emptyIconWrap: {
-    width: 76,
-    height: 76,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  emptyTitle: { fontSize: 18, fontWeight: '800' },
-  emptyText: { fontSize: 13, textAlign: 'center', lineHeight: 20 },
-  emptyBtn: {
-    marginTop: 8,
-    paddingHorizontal: 22,
-    paddingVertical: 12,
+  serviceIconWrap: {
+    width: 48,
+    height: 48,
     borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  emptyBtnText: { color: '#FFF', fontSize: 14, fontWeight: '700' },
+  serviceTitle: { fontSize: 14.5, fontWeight: '800', color: '#1A1A1A', marginBottom: 3 },
+  serviceSubtitle: { fontSize: 12, fontWeight: '500', color: '#9E9E9E', marginBottom: 6 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  ratingText: { fontSize: 12, fontWeight: '700', color: '#1A1A1A' },
+  reviewsText: { fontSize: 11.5, fontWeight: '500', color: '#9E9E9E' },
+  priceWrap: { alignItems: 'flex-end' },
+  priceText: { fontSize: 14, fontWeight: '800', color: '#1A1A1A' },
+  priceSuffix: { fontSize: 10.5, fontWeight: '600', color: '#9E9E9E' },
 });
