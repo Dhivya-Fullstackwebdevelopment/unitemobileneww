@@ -58,14 +58,6 @@ const loadProfile = async (): Promise<UserProfile> => {
   }
 };
 
-const saveProfile = async (profile: UserProfile): Promise<void> => {
-  try {
-    await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-  } catch (error) {
-    console.error('Error saving profile:', error);
-  }
-};
-
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
   const [refreshing, setRefreshing] = useState(false);
@@ -110,14 +102,10 @@ export default function ProfileScreen() {
             <Ionicons name="create-outline" size={18} color="#FFFFFF" />
           </TouchableOpacity>
 
-          {/* ✅ FIXED: fully circular avatar, fixed container size + overflow hidden + resizeMode cover */}
+          {/* Fully circular avatar — fixed container size, locked ratio, resizeMode cover */}
           <View style={styles.avatarContainer}>
             {profile.avatar ? (
-              <Image
-                source={{ uri: profile.avatar }}
-                style={styles.avatar}
-                resizeMode="cover"
-              />
+              <Image source={{ uri: profile.avatar }} style={styles.avatar} resizeMode="cover" />
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarText}>{getInitials(profile.name)}</Text>
@@ -301,7 +289,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // ✅ FIXED avatar block — locked container size prevents flex from squishing into an oval
+  // Avatar block — locked container size prevents flex from squishing into an oval
   avatarContainer: {
     marginTop: 12,
     marginBottom: 14,
