@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
 import { THEME } from '@/components/Reuse/Reusecolor';
+import FloatingAIButton from '@/components/FloatingAIButton';
 
 // Replace with the logged-in user's real first name from your auth store
 const USER_NAME = 'Ahmed';
@@ -54,6 +55,10 @@ const TOP_RATED: ProDetails[] = [
 
 export default function HomeScreen() {
   const [query, setQuery] = useState('');
+
+  const handleAIChatPress = () => {
+    router.push('../chat/ai-chat');
+  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.background }]} edges={['top']}>
@@ -96,7 +101,7 @@ export default function HomeScreen() {
             style={styles.searchInput}
             onSubmitEditing={() => router.push('/(tabs)/explore')}
           />
-          <TouchableOpacity style={styles.aiBtn} onPress={() => router.push('/(tabs)/explore')}>
+          <TouchableOpacity style={styles.aiBtn} onPress={handleAIChatPress}>
             <LinearGradient
               colors={['#FF4081', '#7C4DFF']}
               start={{ x: 0, y: 0 }}
@@ -229,6 +234,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
+      <FloatingAIButton />
     </SafeAreaView>
   );
 }
@@ -396,4 +402,40 @@ const styles = StyleSheet.create({
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   ratingText: { fontSize: 12, fontWeight: '700', color: '#1A1A1A' },
   proPrice: { fontSize: 12.5, fontWeight: '800', color: '#E91E8C' },
+  // Floating AI Button Styles
+  floatingAIBtn: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    zIndex: 999,
+    elevation: 10,
+    shadowColor: '#7C4DFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  floatingAIGradient: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  floatingAIBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FF4081',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  floatingAIBadgeText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#FFF',
+  },
 });
