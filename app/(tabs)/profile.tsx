@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 
-// Types
+// ---------- Types ----------
 interface UserProfile {
   id: string;
   name: string;
@@ -32,7 +32,7 @@ interface UserProfile {
   membershipTier: 'Gold' | 'Platinum' | 'Silver' | 'Bronze';
 }
 
-// Default Profile
+// ---------- Default Profile (matches design spec) ----------
 const defaultProfile: UserProfile = {
   id: '1',
   name: 'Ahmed Al-Rashdi',
@@ -42,20 +42,16 @@ const defaultProfile: UserProfile = {
   bookings: 23,
   rating: 4.8,
   totalSpent: 391,
-  preferences: 'Prefers morning slots - AC + Cleaning most booked - Qurum villa regular',
+  preferences: 'Prefers morning slots · AC + Cleaning most booked · Qurum villa regular',
   membershipTier: 'Gold',
 };
 
-// Storage Keys
 const PROFILE_KEY = '@user_profile';
 
-// Helper functions
 const loadProfile = async (): Promise<UserProfile> => {
   try {
     const stored = await AsyncStorage.getItem(PROFILE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
+    if (stored) return JSON.parse(stored);
     return defaultProfile;
   } catch {
     return defaultProfile;
@@ -89,178 +85,180 @@ export default function ProfileScreen() {
     setRefreshing(false);
   };
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  const getMembershipColor = (tier: string) => {
-    switch (tier) {
-      case 'Bronze': return '#CD7F32';
-      case 'Silver': return '#C0C0C0';
-      case 'Gold': return '#FFD700';
-      case 'Platinum': return '#E5E4E2';
-      default: return '#FFD700';
-    }
-  };
+  const getInitials = (name: string) =>
+    name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
+      <StatusBar barStyle="light-content" backgroundColor="#C221BC" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back-outline" size={24} color="#1A1A1A" />
+        {/* Gradient Header — magenta-purple (top-left) to indigo (bottom-right) */}
+        <LinearGradient
+          colors={['#C221BC', '#4C63E8']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
+            <Ionicons name="create-outline" size={18} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <TouchableOpacity style={styles.settingsButton}>
-            <Ionicons name="settings-outline" size={24} color="#1A1A1A" />
-          </TouchableOpacity>
-        </View>
 
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          {/* Avatar */}
           <View style={styles.avatarContainer}>
             {profile.avatar ? (
               <Image source={{ uri: profile.avatar }} style={styles.avatar} />
             ) : (
-              <LinearGradient
-                colors={['#FF6B35', '#FF8A65']}
-                style={styles.avatarPlaceholder}
-              >
+              <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarText}>{getInitials(profile.name)}</Text>
-              </LinearGradient>
+              </View>
             )}
           </View>
 
           <Text style={styles.profileName}>{profile.name}</Text>
-          <Text style={styles.profilePhone}>{profile.phone}</Text>
-          <Text style={styles.profileArea}>
-            <Ionicons name="location-outline" size={14} color="#666" />
-            {' '}{profile.area}
+          <Text style={styles.profileInfo}>
+            {profile.phone} · {profile.area}
           </Text>
-        </View>
+        </LinearGradient>
 
-        {/* Gold Member Card */}
-        <View style={styles.memberCard}>
-          <View style={styles.memberHeader}>
-            <View style={styles.memberTitleRow}>
-              <Ionicons name="star" size={18} color="#FFD700" />
-              <Text style={styles.memberTitle}>Gold Member</Text>
+        {/* Body content, pulled up over the header curve */}
+        <View style={styles.body}>
+          {/* Gold Member Card */}
+          <View style={styles.memberCard}>
+            <View style={styles.memberHeader}>
+              <View style={styles.memberTitleRow}>
+                <View style={styles.memberIconWrap}>
+                  <Ionicons name="lock-closed" size={13} color="#FFFFFF" />
+                </View>
+                <Text style={styles.memberTitle}>Gold Member</Text>
+              </View>
             </View>
-            <Text style={styles.memberPoints}>{profile.goldPoints} pts</Text>
+
+            <View style={styles.memberPointsRow}>
+              <Text style={styles.memberPoints}>{profile.goldPoints} pts</Text>
+              <Text style={styles.memberNext}> · Next: Platinum at 1,000</Text>
+            </View>
+
+            <View style={styles.progressContainer}>
+              <LinearGradient
+                colors={['#FF6B35', '#FFB74D']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[
+                  styles.progressBar,
+                  { width: `${Math.min((profile.goldPoints / 1000) * 100, 100)}%` },
+                ]}
+              />
+            </View>
           </View>
 
-          <View style={styles.progressContainer}>
-            <View 
-              style={[
-                styles.progressBar, 
-                { 
-                  width: `${Math.min((profile.goldPoints / 1000) * 100, 100)}%`,
-                  backgroundColor: '#FFD700'
-                }
-              ]} 
-            />
-          </View>
-
-          <Text style={styles.memberNext}>Next: Platinum at 1,000</Text>
-
-          {/* Stats Grid */}
-          <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{profile.bookings}</Text>
+          {/* Stats Row */}
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={[styles.statNumber, { color: '#D6249F' }]}>{profile.bookings}</Text>
               <Text style={styles.statLabel}>Bookings</Text>
             </View>
 
-            <View style={styles.statDivider} />
-
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{profile.rating}</Text>
+            <View style={styles.statCard}>
+              <View style={styles.statWithIcon}>
+                <Text style={[styles.statNumber, { color: '#FF9800' }]}>{profile.rating}</Text>
+                <Ionicons name="star" size={14} color="#FF9800" style={styles.statIcon} />
+              </View>
               <Text style={styles.statLabel}>Avg Rating</Text>
             </View>
 
-            <View style={styles.statDivider} />
-
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>OMR {profile.totalSpent}</Text>
+            <View style={styles.statCard}>
+              <Text style={[styles.statNumber, { color: '#10B981' }]}>OMR</Text>
+              <Text style={[styles.statNumber, { color: '#10B981' }]}>{profile.totalSpent}</Text>
               <Text style={styles.statLabel}>Total Spent</Text>
             </View>
           </View>
-        </View>
 
-        {/* Account Section */}
-        <View style={styles.section}>
+          {/* Account Section */}
           <Text style={styles.sectionTitle}>ACCOUNT</Text>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="location-outline" size={20} color="#FF6B35" />
-            <Text style={styles.menuText}>Saved Addresses</Text>
-            <View style={styles.menuRight}>
-              <Text style={styles.menuMeta}>3 addresses</Text>
-              <Ionicons name="chevron-forward" size={18} color="#C0C0C0" />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="card-outline" size={20} color="#66BB6A" />
-            <Text style={styles.menuText}>Payment Methods</Text>
-            <View style={styles.menuRight}>
-              <Text style={styles.menuMeta}>Thawani + Visa</Text>
-              <Ionicons name="chevron-forward" size={18} color="#C0C0C0" />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="notifications-outline" size={20} color="#42A5F5" />
-            <Text style={styles.menuText}>Notifications</Text>
-            <View style={styles.menuRight}>
-              <View style={styles.badgeOn}>
-                <Text style={styles.badgeOnText}>On</Text>
+          <View style={styles.menuGroup}>
+            <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+              <View style={[styles.menuIconWrap, { backgroundColor: '#FDECF3' }]}>
+                <Ionicons name="location" size={16} color="#EC4899" />
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#C0C0C0" />
-            </View>
-          </TouchableOpacity>
+              <Text style={styles.menuText}>Saved Addresses</Text>
+              <View style={styles.menuRight}>
+                <Text style={styles.menuMeta}>3 addresses</Text>
+                <Ionicons name="chevron-forward" size={18} color="#C0C0C0" />
+              </View>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="globe-outline" size={20} color="#AB47BC" />
-            <Text style={styles.menuText}>Language</Text>
-            <View style={styles.menuRight}>
-              <Text style={styles.menuMeta}>English</Text>
-              <Ionicons name="chevron-forward" size={18} color="#C0C0C0" />
-            </View>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+              <View style={[styles.menuIconWrap, { backgroundColor: '#E6F7EE' }]}>
+                <Ionicons name="card" size={16} color="#22C55E" />
+              </View>
+              <Text style={styles.menuText}>Payment Methods</Text>
+              <View style={styles.menuRight}>
+                <Text style={styles.menuMeta}>Thawani + Visa</Text>
+                <Ionicons name="chevron-forward" size={18} color="#C0C0C0" />
+              </View>
+            </TouchableOpacity>
 
-        {/* AI Preferences */}
-        <View style={styles.aiCard}>
-          <View style={styles.aiHeader}>
-            <Ionicons name="sparkles" size={20} color="#8E24AA" />
-            <Text style={styles.aiTitle}>AI Preferences Learned</Text>
+            <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+              <View style={[styles.menuIconWrap, { backgroundColor: '#FFF6E0' }]}>
+                <Ionicons name="notifications" size={16} color="#F5B301" />
+              </View>
+              <Text style={styles.menuText}>Notifications</Text>
+              <View style={styles.menuRight}>
+                <View style={styles.badgeOn}>
+                  <Text style={styles.badgeOnText}>On</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#C0C0C0" />
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} activeOpacity={0.7}>
+              <View style={[styles.menuIconWrap, { backgroundColor: '#EAF2FE' }]}>
+                <Ionicons name="globe" size={16} color="#3B82F6" />
+              </View>
+              <Text style={styles.menuText}>Language</Text>
+              <View style={styles.menuRight}>
+                <Text style={styles.menuMeta}>English</Text>
+                <Ionicons name="chevron-forward" size={18} color="#C0C0C0" />
+              </View>
+            </TouchableOpacity>
           </View>
-          <Text style={styles.aiText}>{profile.preferences}</Text>
-        </View>
 
-        {/* Log Out */}
-        <TouchableOpacity style={styles.logoutButton} onPress={() => {
-          Alert.alert(
-            'Log Out',
-            'Are you sure you want to log out?',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Log Out', style: 'destructive' }
-            ]
-          );
-        }}>
-          <Text style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
+          {/* AI Preferences Learned */}
+          <View style={styles.aiCard}>
+            <View style={styles.aiHeader}>
+              <Ionicons name="sparkles" size={18} color="#8E24AA" />
+              <Text style={styles.aiTitle}>AI Preferences Learned</Text>
+            </View>
+            <Text style={styles.aiText}>{profile.preferences}</Text>
+          </View>
+
+          {/* Log Out */}
+          <TouchableOpacity
+            style={styles.logoutButton}
+            activeOpacity={0.8}
+            onPress={() => {
+              Alert.alert('Log Out', 'Are you sure you want to log out?', [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Log Out',
+                  style: 'destructive',
+                  onPress: () => {
+                    router.replace('/');
+                  },
+                },
+              ]);
+            }}
+          >
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -269,80 +267,54 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F5F5F7',
   },
   scrollContent: {
-    paddingHorizontal: 16,
     paddingBottom: 30,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+
+  // Gradient header
+  headerGradient: {
+    paddingTop: 20,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+  editButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1A1A',
-  },
-  settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  profileCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
   },
   avatarContainer: {
-    marginBottom: 12,
+    marginTop: 12,
+    marginBottom: 14,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     borderWidth: 3,
-    borderColor: '#FF6B35',
+    borderColor: 'rgba(255,255,255,0.8)',
   },
   avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#FF6B35',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.7)',
   },
   avatarText: {
     fontSize: 30,
@@ -352,118 +324,157 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1A1A1A',
-    marginBottom: 2,
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
-  profilePhone: {
-    fontSize: 14,
-    color: '#666666',
-    marginBottom: 2,
+  profileInfo: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.9)',
   },
-  profileArea: {
-    fontSize: 14,
-    color: '#666666',
+
+  // Body wrapper — pulls content up to overlap header curve
+  body: {
+    marginTop: -24,
+    paddingHorizontal: 16,
   },
+
+  // Gold Member Card
   memberCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   memberHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   memberTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+  memberIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: '#FF6B35',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   memberTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#1A1A1A',
   },
+  memberPointsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+  },
   memberPoints: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#FF6B35',
+    color: '#1A1A1A',
+  },
+  memberNext: {
+    fontSize: 13,
+    color: '#999999',
   },
   progressContainer: {
     height: 6,
     backgroundColor: '#F0F0F0',
     borderRadius: 3,
     overflow: 'hidden',
-    marginBottom: 6,
   },
   progressBar: {
     height: '100%',
     borderRadius: 3,
   },
-  memberNext: {
-    fontSize: 12,
-    color: '#999999',
-    marginBottom: 14,
-  },
-  statsGrid: {
+
+  // Stats row — three separate cards
+  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    gap: 10,
+    marginBottom: 20,
   },
-  statItem: {
-    alignItems: 'center',
+  statCard: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   statNumber: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1A1A1A',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#999999',
-    marginTop: 2,
+    marginTop: 4,
   },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#F0F0F0',
+  statWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
-  section: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
-    overflow: 'hidden',
+  statIcon: {
+    marginLeft: 2,
   },
+
+  // Section title
   sectionTitle: {
     fontSize: 12,
     fontWeight: '700',
     color: '#999999',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
     letterSpacing: 1,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+
+  // Menu group
+  menuGroup: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    overflow: 'hidden',
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#F5F5F5',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
     gap: 12,
+  },
+  menuItemLast: {
+    borderBottomWidth: 0,
+  },
+  menuIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   menuText: {
     flex: 1,
@@ -491,6 +502,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
+
+  // AI Preferences
   aiCard: {
     backgroundColor: '#F8F0FA',
     borderRadius: 16,
@@ -515,16 +528,18 @@ const styles = StyleSheet.create({
     color: '#555555',
     lineHeight: 20,
   },
+
+  // Log Out
   logoutButton: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 2,
   },
   logoutText: {
     fontSize: 15,
