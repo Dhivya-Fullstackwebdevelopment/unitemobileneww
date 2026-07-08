@@ -17,8 +17,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // ---- Brand colors pulled from the design ----
-const GRADIENT = ['#8B5CF6', '#A855F7']; // avatar / send button / selected chip
-const HIGHLIGHT_GRADIENT = ['#FDF2FF', '#F5F0FF']; // AI "insight" card background
+const GRADIENT: [string, string] = ['#8B5CF6', '#A855F7']; // avatar / send button / selected chip
+const HIGHLIGHT_GRADIENT: [string, string] = ['#FDF2FF', '#F5F0FF']; // AI "insight" card background
 const BG = '#F7F6FB';
 const BORDER = '#EDEBF5';
 const TEXT_DARK = '#1A1A1A';
