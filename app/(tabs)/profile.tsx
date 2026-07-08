@@ -110,9 +110,14 @@ export default function ProfileScreen() {
             <Ionicons name="create-outline" size={18} color="#FFFFFF" />
           </TouchableOpacity>
 
+          {/* ✅ FIXED: fully circular avatar, fixed container size + overflow hidden + resizeMode cover */}
           <View style={styles.avatarContainer}>
             {profile.avatar ? (
-              <Image source={{ uri: profile.avatar }} style={styles.avatar} />
+              <Image
+                source={{ uri: profile.avatar }}
+                style={styles.avatar}
+                resizeMode="cover"
+              />
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarText}>{getInitials(profile.name)}</Text>
@@ -295,9 +300,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+  // ✅ FIXED avatar block — locked container size prevents flex from squishing into an oval
   avatarContainer: {
     marginTop: 12,
     marginBottom: 14,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   avatar: {
     width: 84,
