@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   View,
   Text,
@@ -10,258 +11,237 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '../../constants/Colors';
 
 export default function BookingConfirmationScreen() {
   const {
-    bookingId = 'UO-28062025-4521',
-    amount = '17',
-    method = 'Thawani',
-    professionalName = 'Mohammed Al-Balushi',
-    professionalRole = 'AC Specialist',
-    rating = '4.9',
-    matchScore = '94%',
+    bookingId = 'UO-4601',
     service = 'AC Deep Cleaning',
-    dateTime = 'Sat 28 Jun, 10:00 AM',
-    address = 'Qurum, Muscat',
+    professionalName = 'Mohammed Al-Balushi',
+    rating = '4.9',
+    dateTime = 'Wed 9 Jul, 10:00 AM',
+    address = 'Villa 12, Qurum',
+    totalAmount = '17.985',
   } = useLocalSearchParams<{
     bookingId?: string;
-    amount?: string;
-    method?: string;
-    professionalName?: string;
-    professionalRole?: string;
-    rating?: string;
-    matchScore?: string;
     service?: string;
+    professionalName?: string;
+    rating?: string;
     dateTime?: string;
     address?: string;
+    totalAmount?: string;
   }>();
 
-  const initial = String(professionalName).trim().charAt(0).toUpperCase();
-
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.background }]} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 32, paddingBottom: 24 }}
-      >
-        {/* Success icon */}
-        <View style={styles.successIconOuter}>
-          <View style={styles.successIconInner}>
-            <Ionicons name="checkmark" size={44} color="#22B573" />
-          </View>
-        </View>
-
-        <Text style={styles.title}>Booking Confirmed! 🎉</Text>
-        <Text style={styles.subtitle}>Your professional has been assigned</Text>
-
-        <View style={styles.bookingIdBadge}>
-          <Text style={styles.bookingIdText}>Booking #{bookingId}</Text>
-        </View>
-
-        {/* Professional card */}
-        <View style={styles.card}>
-          <View style={styles.proRow}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initial}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.proName}>{professionalName}</Text>
-              <View style={styles.proMetaRow}>
-                <Text style={styles.proMeta}>{professionalRole}</Text>
-                <Text style={styles.proMetaDot}>·</Text>
-                <Ionicons name="star" size={12} color="#FFB300" />
-                <Text style={styles.proMeta}>{rating}</Text>
-                <Text style={styles.proMetaDot}>·</Text>
-                <Text style={styles.proMetaAI}>AI Match {matchScore}</Text>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.circleBtn}>
-              <Ionicons name="chatbubble-outline" size={16} color="#1A1A1A" />
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.circleBtn, styles.circleBtnPrimary]}>
-              <Ionicons name="call" size={16} color="#FFF" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Service</Text>
-            <Text style={styles.detailValue}>{service}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Date & Time</Text>
-            <Text style={styles.detailValue}>{dateTime}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Address</Text>
-            <Text style={styles.detailValue}>{address}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Payment</Text>
-            <Text style={styles.detailValuePaid}>
-              Paid via {method} — OMR {amount}
-            </Text>
-          </View>
-        </View>
-
-        {/* AI notice */}
-        <View style={styles.aiNotice}>
-          <Text style={styles.aiNoticeText}>
-            ✨ AI sent confirmation SMS in Arabic & English via Unifonic. Reminder set for 8:00 AM
-            tomorrow.
-          </Text>
-        </View>
-
-        {/* Actions */}
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() =>
-            router.push({
-              pathname: '/bookings/track',
-              params: {
-                professionalName,
-                professionalRole,
-                rating,
-                service,
-                address,
-                vehicle: 'Toyota Hiace · White',
-                plate: 'AB 1234',
-                etaMinutes: '8',
-              },
-            })
-          }
-          style={{ marginTop: 20 }}
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor="#0D0E12" />
+      
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
+          {/* ── Gradient Success Checkmark Block ── */}
           <LinearGradient
-            colors={['#E91E8C', '#7C4DFF']}
+            colors={['#10B981', '#1D4ED8']}
             start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.primaryBtn}
+            end={{ x: 1, y: 1 }}
+            style={styles.checkmarkCard}
           >
-            <Text style={styles.primaryBtnText}>Track Service Live</Text>
+            <Ionicons name="checkmark" size={42} color="#0D0E12" />
           </LinearGradient>
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => router.replace('/')}
-          style={styles.secondaryBtn}
-        >
-          <Text style={styles.secondaryBtnText}>Back to Home</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+          {/* ── Main Titles ── */}
+          <Text style={styles.confirmedHeading}>Booking Confirmed!</Text>
+          <Text style={styles.notificationSubtitle}>
+            Mohammed confirmed. SMS + WhatsApp sent.
+          </Text>
+
+          {/* ── Dark Statement Details Table Card ── */}
+          <View style={styles.detailsTicketCard}>
+            
+            <View style={styles.ticketRow}>
+              <Text style={styles.labelCol}>Booking</Text>
+              <Text style={styles.valueColBold}>#{bookingId}</Text>
+            </View>
+
+            <View style={styles.ticketRow}>
+              <Text style={styles.labelCol}>Service</Text>
+              <Text style={styles.valueCol}>{service}</Text>
+            </View>
+
+            <View style={styles.ticketRow}>
+              <Text style={styles.labelCol}>Pro</Text>
+              <Text style={styles.valueCol}>{professionalName} ★{rating}</Text>
+            </View>
+
+            <View style={styles.ticketRow}>
+              <Text style={styles.labelCol}>Date</Text>
+              <Text style={styles.valueCol}>{dateTime}</Text>
+            </View>
+
+            <View style={styles.ticketRow}>
+              <Text style={styles.labelCol}>Address</Text>
+              <Text style={styles.valueCol}>{address}</Text>
+            </View>
+
+            <View style={styles.ticketRow}>
+              <Text style={styles.labelCol}>Total</Text>
+              <Text style={styles.valueCol}>{`OMR ${totalAmount}`}</Text>
+            </View>
+
+          </View>
+
+          {/* ── Bottom Action Button Row ── */}
+          <View style={styles.buttonActionRow}>
+            
+            {/* Chat Action Button */}
+            <TouchableOpacity 
+              style={styles.chatButton} 
+              activeOpacity={0.8}
+              onPress={() => router.push('/(tabs)/ai-chat')}
+            >
+              <Ionicons name="chatbubble" size={16} color="#FFF" style={{ marginRight: 6 }} />
+              <Text style={styles.chatBtnText}>Chat</Text>
+            </TouchableOpacity>
+
+            {/* Live Track Action Button */}
+            <TouchableOpacity 
+              style={styles.trackButtonContainer} 
+              activeOpacity={0.9}
+              onPress={() => router.push('/bookings/track')}
+            >
+              <LinearGradient
+                colors={['#D500F9', '#7B1FA2']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.trackGradientBtn}
+              >
+                <Ionicons name="location" size={16} color="#FFF" style={{ marginRight: 6 }} />
+                <Text style={styles.trackBtnText}>Track</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+          </View>
+
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  successIconOuter: {
-    alignSelf: 'center',
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#E8F9F0',
+  root: {
+    flex: 1,
+    backgroundColor: '#0D0E12', // Pure deep dark background flow
+  },
+  safe: {
+    flex: 1,
+  },
+  scrollContent: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 80,
+    paddingBottom: 40,
+  },
+  checkmarkCard: {
+    width: 90,
+    height: 90,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 28,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 6,
   },
-  successIconInner: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 2.5,
-    borderColor: '#22B573',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 22,
+  confirmedHeading: {
+    fontSize: 26,
     fontWeight: '800',
-    color: '#1A1A1A',
+    color: '#FFF',
     textAlign: 'center',
-    marginBottom: 6,
+    marginBottom: 10,
+    letterSpacing: -0.5,
   },
-  subtitle: {
-    fontSize: 13.5,
+  notificationSubtitle: {
+    fontSize: 14,
     fontWeight: '500',
-    color: '#9E9E9E',
+    color: '#7E8494',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 36,
   },
-  bookingIdBadge: {
-    alignSelf: 'center',
-    backgroundColor: '#FBEAF6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  detailsTicketCard: {
+    backgroundColor: '#161822',
     borderRadius: 20,
-    marginBottom: 24,
+    width: '100%',
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: '#222533',
+    marginBottom: 36,
   },
-  bookingIdText: { fontSize: 12.5, fontWeight: '700', color: '#E91E8C' },
-  card: {
-    backgroundColor: '#F7F7F9',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-  },
-  proRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#8E24AA',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { color: '#FFF', fontSize: 18, fontWeight: '800' },
-  proName: { fontSize: 14.5, fontWeight: '800', color: '#1A1A1A', marginBottom: 2 },
-  proMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
-  proMeta: { fontSize: 11.5, fontWeight: '600', color: '#757575' },
-  proMetaDot: { fontSize: 11.5, color: '#BDBDBD' },
-  proMetaAI: { fontSize: 11.5, fontWeight: '700', color: '#7C4DFF' },
-  circleBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#FFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  circleBtnPrimary: { backgroundColor: '#8E24AA' },
-  divider: { height: 1, backgroundColor: '#EAEAEA', marginVertical: 14 },
-  detailRow: {
+  ticketRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 7,
+  },
+  labelCol: {
+    fontSize: 13,
+    color: '#555B70',
+    fontWeight: '600',
+  },
+  valueCol: {
+    fontSize: 13,
+    color: '#FFF',
+    fontWeight: '700',
+    textAlign: 'right',
+    flex: 1,
+    marginLeft: 20,
+  },
+  valueColBold: {
+    fontSize: 14,
+    color: '#FFF',
+    fontWeight: '800',
+    textAlign: 'right',
+  },
+  buttonActionRow: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 12,
+  },
+  chatButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#1C1E29',
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#2C2F3F',
   },
-  detailLabel: { fontSize: 12.5, fontWeight: '600', color: '#9E9E9E' },
-  detailValue: { fontSize: 12.5, fontWeight: '700', color: '#1A1A1A' },
-  detailValuePaid: { fontSize: 12.5, fontWeight: '700', color: '#22B573' },
-  aiNotice: {
-    backgroundColor: '#EEF3FF',
-    borderRadius: 16,
-    padding: 14,
+  chatBtnText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
-  aiNoticeText: { fontSize: 12, fontWeight: '500', color: '#5B6B99', lineHeight: 17 },
-  primaryBtn: {
-    borderRadius: 16,
-    paddingVertical: 16,
+  trackButtonContainer: {
+    flex: 1,
+    height: 48,
+  },
+  trackGradientBtn: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  primaryBtnText: { fontSize: 14.5, fontWeight: '800', color: '#FFF' },
-  secondaryBtn: {
-    marginTop: 12,
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    borderWidth: 1.5,
-    borderColor: '#EFEFEF',
+  trackBtnText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
-  secondaryBtnText: { fontSize: 14.5, fontWeight: '800', color: '#1A1A1A' },
 });

@@ -46,7 +46,7 @@ export default function FloatingAIButton() {
     >
       <Animated.View style={[styles.buttonWrapper, { transform: [{ scale: pulseAnim }] }]}>
         <LinearGradient
-          colors={['#FF4081', '#7C4DFF']}
+          colors={['#fd59c9', '#7C4DFF']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.gradient}

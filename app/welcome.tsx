@@ -1,245 +1,94 @@
-import { useState } from 'react';
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
-    Image,
-    StatusBar,
-} from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 
-const GRADIENT_COLORS = ['#E040FB', '#7C4DFF', '#5C1FD9'] as const;
-
-interface ServiceChip {
-    key: string;
-    label: string;
-    emoji: string;
-}
-
-const SERVICE_CHIPS: ServiceChip[] = [
-    { key: 'ac', label: 'AC', emoji: '❄️' },
-    { key: 'clean', label: 'CLEAN', emoji: '🧹' },
-    { key: 'fix', label: 'FIX', emoji: '🔧' },
-    { key: 'beauty', label: 'BEAUTY', emoji: '💅' },
-];
+const COLORS = {
+    bgDark: '#0A0119',
+    purpleStart: '#B829E3',
+    purpleEnd: '#801DF7',
+    cardBg: '#150A2B',
+    borderDark: '#2B1B4D',
+    textGray: '#8F8A9A',
+};
 
 export default function WelcomeScreen() {
-    const [language, setLanguage] = useState<'en' | 'ar'>('en');
-
     return (
-        <>
-            {/* Hide bottom tab bar (Home/Search/Favourites/Profile) just for this screen */}
-            <LinearGradient
-                colors={GRADIENT_COLORS}
-                start={{ x: 0.1, y: 0 }}
-                end={{ x: 0.9, y: 1 }}
-                style={styles.flex}
-            >
-                <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
-                    <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+        <View style={styles.darkContainer}>
+            <StatusBar barStyle="light-content" backgroundColor={COLORS.bgDark} />
+            <SafeAreaView style={styles.flex} edges={['top', 'bottom']}>
 
-                    <View style={styles.header}>
-                        {/* Swap this Image for your real logo asset, same pattern as HomeScreen:
-                <Image source={require('../../assets/logo.png')} style={styles.logoImage} /> */}
-                        <Text style={styles.logoText}>
-                            Unite<Text style={styles.logoTextAccent}>Oman</Text>
-                        </Text>
-                        <Text style={styles.tagline}>Oman&apos;s #1 Home Services Platform</Text>
-                        <Text style={styles.taglineAr}>منصة الخدمات المنزلية في عُمان</Text>
-                    </View>
+                <View style={styles.welcomeCenterContent}>
+                    <Text style={styles.welcomeTitle}>
+                        Home services,{'\n'}
+                        <Text style={styles.welcomeTitleAccent}>on demand.</Text>
+                    </Text>
 
-                    <View style={styles.chipsRow}>
-                        {SERVICE_CHIPS.map((chip) => (
-                            <View key={chip.key} style={styles.chipCard}>
-                                <Text style={styles.chipEmoji}>{chip.emoji}</Text>
-                                <Text style={styles.chipLabel}>{chip.label}</Text>
-                            </View>
-                        ))}
-                    </View>
+                    <Text style={styles.welcomeSubtitle}>
+                        Book trusted pros for AC, cleaning, plumbing and more in Muscat.
+                    </Text>
 
-                    <View style={styles.badgeWrap}>
-                        <View style={styles.badge}>
-                            <View style={styles.badgeDot} />
-                            <Text style={styles.badgeText}>900+ pros live in Muscat</Text>
+                    <View style={styles.serviceCard}>
+                        <View style={styles.emojiRow}>
+                            <Text style={styles.largeEmoji}>🏠</Text>
+                            <Text style={styles.largeEmojiSparkle}>✨</Text>
                         </View>
+                        <Text style={styles.serviceCardText}>21 household services</Text>
                     </View>
+                </View>
 
-                    <View style={styles.spacer} />
-
-                    <View style={styles.langToggleWrap}>
-                        <View style={styles.langToggle}>
-                            <TouchableOpacity
-                                style={[styles.langOption, language === 'en' && styles.langOptionActive]}
-                                onPress={() => setLanguage('en')}
-                            >
-                                <Text style={[styles.langText, language === 'en' && styles.langTextActive]}>EN</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.langOption, language === 'ar' && styles.langOptionActive]}
-                                onPress={() => setLanguage('ar')}
-                            >
-                                <Text style={[styles.langText, language === 'ar' && styles.langTextActive]}>عربي</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    <View style={styles.footer}>
-                        <TouchableOpacity
-                            style={styles.getStartedBtn}
-                            activeOpacity={0.85}
-                            onPress={() => router.push('/(tabs)')}
+                <View style={styles.welcomeFooter}>
+                    <TouchableOpacity
+                        style={styles.primaryButtonWrapper}
+                        activeOpacity={0.9}
+                        onPress={() => router.push({
+                            pathname: '/(auth)/phone-entry',
+                            params: { authMode: 'sign_up' }
+                        })}
+                    >
+                        <LinearGradient
+                            colors={[COLORS.purpleStart, COLORS.purpleEnd]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.primaryGradientButton}
                         >
-                            <Text style={styles.getStartedText}>Get Started →</Text>
-                        </TouchableOpacity>
+                            <Text style={styles.primaryButtonText}>Get Started</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={styles.signInBtn}
-                            activeOpacity={0.85}
-                        //   onPress={() => router.push('/(auth)/signin')}
-                        >
-                            <Text style={styles.signInText}>Sign In</Text>
-                        </TouchableOpacity>
-                    </View>
-                </SafeAreaView>
-            </LinearGradient>
-        </>
+                    <TouchableOpacity
+                        style={styles.secondaryDarkButton}
+                        activeOpacity={0.8}
+                        onPress={() => router.push({
+                            pathname: '/(auth)/login',
+                            params: { authMode: 'login' }
+                        })}
+                    >
+                        <Text style={styles.secondaryButtonText}>I have an account</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     flex: { flex: 1 },
-    header: {
-        alignItems: 'center',
-        paddingTop: 48,
-        paddingHorizontal: 24,
-    },
-    logoImage: { width: 180, height: 56, resizeMode: 'contain' },
-    logoText: {
-        fontSize: 34,
-        fontWeight: '800',
-        fontStyle: 'italic',
-        color: '#FFFFFF',
-        letterSpacing: -0.5,
-    },
-    logoTextAccent: {
-        color: '#FFFFFF',
-    },
-    tagline: {
-        marginTop: 10,
-        fontSize: 14,
-        fontWeight: '600',
-        color: 'rgba(255,255,255,0.92)',
-    },
-    taglineAr: {
-        marginTop: 4,
-        fontSize: 12,
-        fontWeight: '500',
-        color: 'rgba(255,255,255,0.75)',
-    },
-    chipsRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 24,
-        marginTop: 36,
-        gap: 10,
-    },
-    chipCard: {
-        flex: 1,
-        aspectRatio: 0.82,
-        backgroundColor: 'rgba(255,255,255,0.16)',
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.25)',
-    },
-    chipEmoji: { fontSize: 26, marginBottom: 8 },
-    chipLabel: {
-        fontSize: 11,
-        fontWeight: '800',
-        color: '#FFFFFF',
-        letterSpacing: 0.3,
-    },
-    badgeWrap: { alignItems: 'center', marginTop: 28 },
-    badge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        backgroundColor: 'rgba(255,255,255,0.18)',
-        paddingHorizontal: 16,
-        paddingVertical: 9,
-        borderRadius: 20,
-    },
-    badgeDot: {
-        width: 7,
-        height: 7,
-        borderRadius: 3.5,
-        backgroundColor: '#69F0AE',
-    },
-    badgeText: {
-        fontSize: 12.5,
-        fontWeight: '700',
-        color: '#FFFFFF',
-    },
-    spacer: { flex: 1 },
-    langToggleWrap: { alignItems: 'center', marginBottom: 18 },
-    langToggle: {
-        flexDirection: 'row',
-        backgroundColor: 'rgba(255,255,255,0.18)',
-        borderRadius: 18,
-        padding: 4,
-    },
-    langOption: {
-        paddingHorizontal: 18,
-        paddingVertical: 7,
-        borderRadius: 14,
-    },
-    langOptionActive: {
-        backgroundColor: '#FFFFFF',
-    },
-    langText: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: 'rgba(255,255,255,0.85)',
-    },
-    langTextActive: {
-        color: '#7C4DFF',
-    },
-    footer: {
-        paddingHorizontal: 24,
-        paddingBottom: 20,
-        gap: 12,
-    },
-    getStartedBtn: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        paddingVertical: 16,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-        elevation: 3,
-    },
-    getStartedText: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: '#9660BF',
-    },
-    signInBtn: {
-        backgroundColor: 'rgba(255,255,255,0.16)',
-        borderRadius: 16,
-        paddingVertical: 16,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.35)',
-    },
-    signInText: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#FFFFFF',
-    },
+    darkContainer: { flex: 1, backgroundColor: COLORS.bgDark },
+    welcomeCenterContent: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 12, marginTop: 40 },
+    welcomeTitle: { fontSize: 38, fontWeight: '800', color: '#FFFFFF', textAlign: 'center', lineHeight: 46, letterSpacing: -0.5 },
+    welcomeTitleAccent: { color: '#BD34FA' },
+    welcomeSubtitle: { fontSize: 15, fontWeight: '400', color: COLORS.textGray, textAlign: 'center', marginTop: 16, lineHeight: 22, paddingHorizontal: 20 },
+    serviceCard: { width: '100%', backgroundColor: COLORS.cardBg, borderColor: COLORS.borderDark, borderWidth: 1, borderRadius: 24, paddingVertical: 36, alignItems: 'center', marginTop: 48 },
+    emojiRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+    largeEmoji: { fontSize: 50 },
+    largeEmojiSparkle: { fontSize: 40, marginLeft: -5, marginTop: -20 },
+    serviceCardText: { color: COLORS.textGray, fontSize: 14, fontWeight: '500' },
+    welcomeFooter: { paddingHorizontal: 24, paddingBottom: 24, gap: 12 },
+    primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+    secondaryDarkButton: { backgroundColor: 'rgba(255, 255, 255, 0.06)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.12)', borderRadius: 16, paddingVertical: 18, alignItems: 'center' },
+    secondaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+    primaryButtonWrapper: { width: '100%', borderRadius: 16, overflow: 'hidden' },
+    primaryGradientButton: { paddingVertical: 18, alignItems: 'center', justifyContent: 'center' },
 });

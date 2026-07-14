@@ -8,17 +8,26 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 function TabIcon({
   name,
   focused,
+  isAI,
 }: {
   name: keyof typeof Ionicons.glyphMap;
   focused: boolean;
+  isAI?: boolean;
 }) {
   return (
     <View style={styles.iconWrapper}>
-      {focused && <View style={styles.activePill} />}
+      {focused && (
+        <View 
+          style={[
+            styles.activePill, 
+            isAI && { backgroundColor: 'rgba(213, 0, 249, 0.1)' } // Custom soft purple background matching theme
+          ]} 
+        />
+      )}
       <Ionicons
         name={name}
         size={22}
-        color={focused ? THEME.primary : Colors.tabBarInactive}
+        color={focused ? (isAI ? '#D500F9' : THEME.primary) : Colors.tabBarInactive}
       />
     </View>
   );
@@ -42,6 +51,7 @@ export default function TabLayout() {
         tabBarItemStyle: styles.tabItem,
       }}
     >
+      {/* ── 1st Menu Item: Home ── */}
       <Tabs.Screen
         name="index"
         options={{
@@ -51,15 +61,24 @@ export default function TabLayout() {
           ),
         }}
       />
+      
+      {/* ── 2nd Menu Item: AI Chat (Shifted up) ── */}
       <Tabs.Screen
-        name="explore"
+        name="ai-chat"
         options={{
-          title: 'Explore',
+          title: 'Chat',
+          tabBarActiveTintColor: '#D500F9', 
           tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} />
+            <TabIcon
+              name={focused ? 'chatbubble' : 'chatbubble-outline'}
+              focused={focused}
+              isAI
+            />
           ),
         }}
       />
+      
+      {/* ── 3rd Menu Item: Bookings (Shifted up) ── */}
       <Tabs.Screen
         name="bookings"
         options={{
@@ -72,6 +91,22 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      {/* ── 4th Menu Item: Notifications (Newly Added) ── */}
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: 'Notifs',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              name={focused ? 'notifications' : 'notifications-outline'}
+              focused={focused}
+            />
+          ),
+        }}
+      />
+
+      {/* ── 5th Menu Item: Profile ── */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -92,13 +127,11 @@ const styles = StyleSheet.create({
     height: Platform.OS === 'ios' ? 86 : 86,
     paddingBottom: Platform.OS === 'ios' ? 26 : 8,
     paddingTop: 6,
-    // Floating card elevation
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.07,
     shadowRadius: 20,
     elevation: 16,
-    // Subtle top separator instead of border
     borderTopColor: 'transparent',
   },
   tabItem: {

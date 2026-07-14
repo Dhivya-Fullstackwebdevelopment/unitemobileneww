@@ -1,374 +1,196 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Dimensions,
+  TextInput,
   StatusBar,
-  ActivityIndicator,
-  ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useQuery } from '@tanstack/react-query';
-import { catalogApi } from '../../lib/apiClient';
-import { Colors } from '../../constants/Colors';
-import { Category } from '../../types';
-import { getCategoryBanner } from '../../constants/CategoryBanners';
-import { THEME } from '@/components/Reuse/Reusecolor';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_GAP = 12;
-const CARD_PADDING = 20;
-//const CARD_WIDTH = (SCREEN_WIDTH - CARD_PADDING * 2 - CARD_GAP) / 2;
-const CARD_WIDTH = SCREEN_WIDTH - CARD_PADDING * 2;
-// Slug → Ionicons icon map
-const CATEGORY_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
-  'restaurants_cafes': 'restaurant-outline',
-  'food-beverages': 'restaurant-outline',
-  'coffee-cafes': 'cafe-outline',
-  'grooming_for_men': 'cut-outline',
-  'beauty_for_women': 'flower-outline',
-  'spa': 'color-wand-outline',
-  'health_wellness': 'heart-outline',
-  'fitness_gym': 'barbell-outline',
-  'it_software': 'laptop-outline',
-  'electronics': 'hardware-chip-outline',
-  'retail': 'bag-handle-outline',
-  'fashion_clothing': 'shirt-outline',
-  'home_services': 'home-outline',
-  'cleaning_services': 'sparkles-outline',
-  'automotive': 'car-outline',
-  'education': 'school-outline',
-  'travel_tourism': 'airplane-outline',
-  'realestate': 'business-outline',
-  'finance': 'card-outline',
-  'legal-services': 'briefcase-outline',
-  'events-entertainment': 'musical-notes-outline',
-  'photography': 'camera-outline',
-  'food-delivery': 'bicycle-outline',
-  'groceries': 'cart-outline',
-  'medical': 'medkit-outline',
-  'pharmacy': 'medical-outline',
-  'construction': 'construct-outline',
-  'logistics': 'cube-outline',
-};
+interface StaticCategory {
+  id: string;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  bg: string;
+  iconColor: string;
+}
 
-// Gradient palette (cycles through for each card)
-const CARD_GRADIENTS: [string, string][] = [
-  ['#6C3AE0', '#9B5FFF'],
-  ['#FF6B35', '#FF9A6C'],
-  ['#10B981', '#34D399'],
-  ['#F59E0B', '#FBBF24'],
-  ['#EF4444', '#F87171'],
-  ['#3B82F6', '#60A5FA'],
-  ['#8B5CF6', '#A78BFA'],
-  ['#EC4899', '#F472B6'],
+const ALL_SERVICES: StaticCategory[] = [
+  { id: '1', label: 'AC Service', icon: 'snow-outline', bg: '#E3F2FD', iconColor: '#42A5F5' },
+  { id: '2', label: 'Cleaning', icon: 'brush-outline', bg: '#E8F5E9', iconColor: '#4CAF50' },
+  { id: '3', label: 'Plumbing', icon: 'build-outline', bg: '#E0F7FA', iconColor: '#00BCD4' },
+  { id: '4', label: 'Electrical', icon: 'flash-outline', bg: '#FFF8E1', iconColor: '#FF9800' },
+  { id: '5', label: 'Beauty', icon: 'color-wand-outline', bg: '#FCE4EC', iconColor: '#E91E63' },
+  { id: '6', label: 'Carpentry', icon: 'hammer-outline', bg: '#EFEBE9', iconColor: '#8D6E63' },
+  { id: '7', label: 'Pest Control', icon: 'bug-outline', bg: '#F1F8E9', iconColor: '#7CB342' },
+  { id: '8', label: 'Painting', icon: 'color-palette-outline', bg: '#F3E5F5', iconColor: '#9C27B0' },
+  { id: '9', label: 'Car Detail', icon: 'car-sport-outline', bg: '#E1F5FE', iconColor: '#29B6F6' },
+  { id: '10', label: 'Pool Service', icon: 'water-outline', bg: '#E0F2F1', iconColor: '#009688' },
+  { id: '11', label: 'Appliance', icon: 'tv-outline', bg: '#ECEFF1', iconColor: '#607D8B' },
+  { id: '12', label: 'Landscaping', icon: 'leaf-outline', bg: '#E8F5E9', iconColor: '#4CAF50' },
+  { id: '13', label: 'Moving', icon: 'cube-outline', bg: '#FFF3E0', iconColor: '#FF9800' },
+  { id: '14', label: 'Water Tank', icon: 'water-outline', bg: '#E1F5FE', iconColor: '#03A9F4' },
+  { id: '15', label: 'CCTV', icon: 'videocam-outline', bg: '#F3E5F5', iconColor: '#9C27B0' },
+  { id: '16', label: 'Glazing', icon: 'grid-outline', bg: '#E8EAF6', iconColor: '#3F51B5' },
+  { id: '17', label: 'Fitness', icon: 'walk-outline', bg: '#E8F5E9', iconColor: '#4CAF50' },
+  { id: '18', label: 'Babysitting', icon: 'happy-outline', bg: '#FFF3E0', iconColor: '#FF9800' },
+  { id: '19', label: 'Pet Care', icon: 'paw-outline', bg: '#FFF8E1', iconColor: '#FFC107' },
+  { id: '20', label: 'Laundry', icon: 'shirt-outline', bg: '#E3F2FD', iconColor: '#2196F3' },
+  { id: '21', label: 'Renovation', icon: 'construct-outline', bg: '#EFEBE9', iconColor: '#795548' },
 ];
 
-function getCategoryIcon(slug: string): keyof typeof Ionicons.glyphMap {
-  return CATEGORY_ICON_MAP[slug] ?? 'grid-outline';
-}
-
-function getGradient(index: number): [string, string] {
-  return CARD_GRADIENTS[index % CARD_GRADIENTS.length];
-}
-
-function CategoryGridCard({ category, index }: { category: Category; index: number }) {
-  const gradient = getGradient(index);
-  const icon = getCategoryIcon(category.slug);
-  const banner = getCategoryBanner(category.slug);
-
-  const content = (
-    <LinearGradient
-      colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.7)']}
-      style={styles.cardGradient}
-    >
-      {/* Category name */}
-      <Text style={styles.cardTitle} numberOfLines={2}>
-        {category.name_en}
-      </Text>
-
-      {/* Business count badge */}
-      {category.business_count > 0 && (
-        <View style={styles.countBadge}>
-          <Text style={styles.countText}>{category.business_count} businesses</Text>
-        </View>
-      )}
-
-      {/* Arrow */}
-      <View style={styles.arrowCircle}>
-        <Ionicons name="arrow-forward" size={12} color="#000" />
-      </View>
-    </LinearGradient>
-  );
-
-  return (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.85}
-      onPress={() => router.push(`/category/${category.slug}`)}
-    >
-      {banner ? (
-        <ImageBackground source={banner} style={styles.cardImage} resizeMode="cover">
-          {content}
-        </ImageBackground>
-      ) : (
-        <View style={[styles.cardPlaceholder, { backgroundColor: gradient[0] }]}>
-          <LinearGradient colors={gradient} style={styles.cardGradient}>
-            {content}
-          </LinearGradient>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-}
-
 export default function CategoriesScreen() {
-  const C = Colors;
+  const [search, setSearch] = useState('');
 
-  const { data: categories, isLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: catalogApi.categories,
-  });
+  const filteredServices = ALL_SERVICES.filter(item =>
+    item.label.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: C.background }]} edges={['top']}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
 
-      {/* ── Header ── */}
-      <View style={[styles.header, { backgroundColor: C.background }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color={C.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: C.text }]}>All Categories</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      {/* ── Subtitle ── */}
-      <View style={styles.subtitleRow}>
-        <Text style={[styles.subtitle, { color: C.textSecondary }]}>
-          {isLoading ? 'Loading...' : `${categories?.length ?? 0} categories available`}
-        </Text>
-      </View>
-
-      {/* ── Grid ── */}
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={THEME.primary} />
-          <Text style={[styles.loadingText, { color: C.textSecondary }]}>
-            Loading categories...
-          </Text>
+      {/* ── Top Header and Search Row ── */}
+      <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => router.back()}
+            activeOpacity={0.6}
+          >
+            <Ionicons name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>All Services</Text>
         </View>
-      ) : (
-        // <FlatList
-        //   data={categories ?? []}
-        //   keyExtractor={(item) => String(item.id)}
-        //   numColumns={2}
-        //   contentContainerStyle={styles.grid}
-        //   columnWrapperStyle={styles.row}
-        //   showsVerticalScrollIndicator={false}
-        //   renderItem={({ item, index }) => (
-        //     <CategoryGridCard category={item} index={index} />
-        //   )}
-        <FlatList
-          data={categories ?? []}
-          keyExtractor={(item) => String(item.id)}
-          numColumns={1} // <--- Change this from 2 to 1
-          contentContainerStyle={styles.grid}
-          // columnWrapperStyle={styles.row} // <--- Remove or Comment this out (not used for 1 column)
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item, index }) => (
-            <CategoryGridCard category={item} index={index} />
-          )}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyState}>
-              <Ionicons name="grid-outline" size={56} color={C.border} />
-              <Text style={[styles.emptyTitle, { color: C.text }]}>No Categories</Text>
-              <Text style={[styles.emptySubtitle, { color: C.textSecondary }]}>
-                Categories will appear here once added.
-              </Text>
+        
+        <View style={styles.searchContainer}>
+          <Ionicons name="search-outline" size={16} color="#8E8E93" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search..."
+            placeholderTextColor="#8E8E93"
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+      </View>
+
+      {/* ── 3 Column Dynamic Service Grid ── */}
+      <FlatList
+        data={filteredServices}
+        keyExtractor={(item) => item.id}
+        numColumns={3}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.gridContainer}
+        columnWrapperStyle={styles.gridRow}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.card}
+            activeOpacity={0.7}
+            onPress={() => router.push(`/category/${item.id}`)}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: item.bg }]}>
+              <Ionicons name={item.icon} size={26} color={item.iconColor} />
             </View>
-          )}
-        />
-      )}
+            <Text style={styles.cardLabel} numberOfLines={1}>
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-
-  // Header
-  header: {
+  safe: {
+    flex: 1,
+    backgroundColor: '#F4F5F7',
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EBEBEB',
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+  headerLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F3F4F6',
+    flex: 1,
+  },
+  backButton: {
+    marginRight: 8,
+    padding: 4,
+    marginLeft: -4, 
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
+    color: '#000',
+    letterSpacing: -0.5,
   },
-
-  // Subtitle
-  subtitleRow: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F1F4',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    width: '45%',
+    height: 36,
   },
-  subtitle: {
-    fontSize: 13,
-    fontWeight: '500',
+  searchIcon: {
+    marginRight: 6,
   },
-
-  // Grid
-  grid: {
-    paddingHorizontal: CARD_PADDING,
-    paddingBottom: 32,
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#000',
+    paddingVertical: 0,
   },
-  row: {
+  gridContainer: {
+    paddingHorizontal: 12,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  gridRow: {
     justifyContent: 'space-between',
-    marginBottom: CARD_GAP,
+    marginBottom: 12,
   },
-
-  // Card
   card: {
-    width: CARD_WIDTH,
-    height: 250,
+    backgroundColor: '#FFF',
+    width: '31.5%',
+    aspectRatio: 1,
     borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: '#F3F4F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 5,
-    marginBottom: 16
-  },
-  cardImage: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  cardPlaceholder: {
-    flex: 1,
-  },
-  cardGradient: {
-    flex: 1,
-    padding: 16,
-    justifyContent: 'flex-end',
-  },
-  // Decorative circles
-  cardDecor: {
-    position: 'absolute',
-    top: -20,
-    right: -20,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
-  cardDecor2: {
-    position: 'absolute',
-    top: 30,
-    right: 30,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-
-  // Icon
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  emojiIcon: {
-    fontSize: 26,
+  iconCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
   },
-
-  // Text
-  cardTitle: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '800',
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-
-  // Count badge
-  countBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    marginBottom: 4,
-  },
-  countText: {
-    color: 'rgba(255,255,255,0.9)',
+  cardLabel: {
     fontSize: 12,
     fontWeight: '600',
-  },
-
-  // Arrow
-  arrowCircle: {
-    position: 'absolute',
-    bottom: 12,
-    right: 12,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // Loading
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-
-  // Empty
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
-    gap: 12,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  emptySubtitle: {
-    fontSize: 14,
+    color: '#000',
     textAlign: 'center',
   },
 });

@@ -8,276 +8,190 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '../../constants/Colors';
 
 interface StepInfo {
-  key: string;
-  label: string;
   index: number;
+  label: string;
+  state: 'active' | 'inactive';
 }
 
-const STEPS: StepInfo[] = [
-  { key: 'details', label: 'Details', index: 1 },
-  { key: 'schedule', label: 'Schedule', index: 2 },
-  { key: 'payment', label: 'Payment', index: 3 },
+const WIZARD_STEPS: StepInfo[] = [
+  { index: 1, label: 'Date', state: 'active' },
+  { index: 2, label: 'Address', state: 'inactive' },
+  { index: 3, label: 'Pay', state: 'inactive' },
 ];
 
-const CURRENT_STEP = 2;
-
 interface DateOption {
-  key: string;
+  id: string;
   day: string;
   date: string;
-  disabled?: boolean;
 }
 
 const DATE_OPTIONS: DateOption[] = [
-  { key: 'fri27', day: 'Fri', date: '27' },
-  { key: 'sat28', day: 'Sat', date: '28' },
-  { key: 'sun29', day: 'Sun', date: '29' },
-  { key: 'mon30', day: 'Mon', date: '30' },
-  { key: 'tue01', day: 'Tue', date: '01', disabled: true },
+  { id: 'wed9', day: 'Wed', date: '9' },
+  { id: 'thu10', day: 'Thu', date: '10' },
+  { id: 'fri11', day: 'Fri', date: '11' },
+  { id: 'sat12', day: 'Sat', date: '12' },
+  { id: 'sun13', day: 'Sun', date: '13' },
+  { id: 'mon14', day: 'Mon', date: '14' },
 ];
 
 interface TimeOption {
-  key: string;
-  label: string;
-  disabled?: boolean;
+  id: string;
+  time: string;
+  state: 'selected' | 'available' | 'disabled';
 }
 
-const TIME_OPTIONS: TimeOption[] = [
-  { key: '9am', label: '9:00 AM' },
-  { key: '10am', label: '10:00 AM' },
-  { key: '11am', label: '11:00 AM' },
-  { key: '2pm', label: '2:00 PM' },
-  { key: '3pm', label: '3:00 PM' },
-  { key: '4pm', label: '4:00 PM', disabled: true },
+const TIME_SLOTS: TimeOption[] = [
+  { id: 't8', time: '8:00 AM', state: 'disabled' },
+  { id: 't9', time: '9:00 AM', state: 'disabled' },
+  { id: 't10', time: '10:00 AM', state: 'selected' },
+  { id: 't11', time: '11:00 AM', state: 'available' },
+  { id: 't12', time: '12:00 PM', state: 'available' },
+  { id: 't2', time: '2:00 PM', state: 'available' },
+  { id: 't3', time: '3:00 PM', state: 'available' },
+  { id: 't4', time: '4:00 PM', state: 'available' },
+  { id: 't5', time: '5:00 PM', state: 'available' },
 ];
 
-// TODO: replace with the actual service/pro selected on the profile screen
-const BOOKING_SUMMARY = {
-  serviceName: 'AC Deep Cleaning',
-  units: 1,
-  proName: 'Mohammed Al-Balushi',
-  matchScore: 94,
-  price: 15,
-};
-
-const ADDRESS = {
-  line1: 'Villa 14, Street 16, Qurum',
-  line2: 'Al Khuwair, Muscat',
-};
-
-const PLATFORM_FEE = 2;
-
 export default function ScheduleServiceScreen() {
-  useLocalSearchParams<{ proId?: string; serviceId?: string }>();
-  const [selectedDate, setSelectedDate] = useState('sat28');
-  const [selectedTime, setSelectedTime] = useState('10am');
-
-  const servicePrice = BOOKING_SUMMARY.price;
-  const total = servicePrice + PLATFORM_FEE;
+  const [selectedDate, setSelectedDate] = useState('wed9');
+  const [selectedTime, setSelectedTime] = useState('t10');
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.background }]} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
 
-      {/* Header */}
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={20} color={Colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Schedule Service</Text>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-        {/* Step progress */}
-        <View style={styles.stepCard}>
-          {STEPS.map((step, i) => {
-            const isDone = step.index < CURRENT_STEP;
-            const isActive = step.index === CURRENT_STEP;
-            return (
-              <View key={step.key} style={styles.stepItemWrap}>
-                <View style={styles.stepItem}>
-                  <View
-                    style={[
-                      styles.stepCircle,
-                      isDone && styles.stepCircleDone,
-                      isActive && styles.stepCircleActive,
-                    ]}
-                  >
-                    {isDone ? (
-                      <Ionicons name="checkmark" size={14} color="#FFF" />
-                    ) : (
-                      <Text style={[styles.stepNumber, isActive && styles.stepNumberActive]}>
-                        {step.index}
-                      </Text>
-                    )}
-                  </View>
-                  <Text
-                    style={[
-                      styles.stepLabel,
-                      isDone && styles.stepLabelDone,
-                      isActive && styles.stepLabelActive,
-                    ]}
-                  >
-                    {step.label}
+      {/* ── Top Wizard Indicator Line ── */}
+      <View style={styles.wizardHeaderBar}>
+        {WIZARD_STEPS.map((step, idx) => {
+          const isActive = step.state === 'active';
+          return (
+            <View key={step.index} style={styles.stepBlock}>
+              <View style={styles.stepItemCenter}>
+                <View style={[styles.stepCircleCircle, isActive ? styles.circleActive : styles.circleInactive]}>
+                  <Text style={[styles.stepCircleNumberText, isActive ? styles.numTextActive : styles.numTextInactive]}>
+                    {step.index}
                   </Text>
                 </View>
-                {i < STEPS.length - 1 && (
-                  <View style={[styles.stepConnector, isDone && styles.stepConnectorDone]} />
-                )}
+                <Text style={[styles.stepLabelTitle, isActive ? styles.labelActive : styles.labelInactive]}>
+                  {step.label}
+                </Text>
               </View>
+              {idx < WIZARD_STEPS.length - 1 && <View style={styles.stepHorizontalLineDivider} />}
+            </View>
+          );
+        })}
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        
+        {/* Choose Date Layout Heading */}
+        <Text style={styles.mainTitleHeader}>Choose Date</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateSelectorSliderRow}>
+          {DATE_OPTIONS.map((item) => {
+            const isChosen = item.id === selectedDate;
+            if (isChosen) {
+              return (
+                <TouchableOpacity key={item.id} activeOpacity={0.9} style={styles.dateCardWrapper}>
+                  <LinearGradient
+                    colors={['#D500F9', '#8E24AA']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.gradientDateCard}
+                  >
+                    <Text style={styles.dateCardDayTextActive}>{item.day}</Text>
+                    <Text style={styles.dateCardNumberTextActive}>{item.date}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              );
+            }
+            return (
+              <TouchableOpacity 
+                key={item.id} 
+                style={styles.plainDateCard}
+                activeOpacity={0.7}
+                onPress={() => setSelectedDate(item.id)}
+              >
+                <Text style={styles.dateCardDayTextInactive}>{item.day}</Text>
+                <Text style={styles.dateCardNumberTextInactive}>{item.date}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Available Times Selection Header */}
+        <Text style={styles.mainTitleHeader}>Available Times</Text>
+        <View style={styles.timesGridWrapper}>
+          {TIME_SLOTS.map((slot) => {
+            const isSelected = slot.id === selectedTime;
+            const isDisabled = slot.state === 'disabled';
+
+            if (isSelected) {
+              return (
+                <TouchableOpacity key={slot.id} activeOpacity={0.9} style={styles.timeSlotCardWrapper}>
+                  <LinearGradient
+                    colors={['#D500F9', '#8E24AA']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.gradientTimeCard}
+                  >
+                    <Text style={styles.timeCellTextActive}>{slot.time}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              );
+            }
+
+            if (isDisabled) {
+              return (
+                <View key={slot.id} style={styles.timeSlotCardWrapper}>
+                  <View style={styles.disabledTimeCard}>
+                    <Text style={styles.disabledTimeText}>{slot.time} •</Text>
+                  </View>
+                </View>
+              );
+            }
+
+            return (
+              <TouchableOpacity
+                key={slot.id}
+                style={styles.timeSlotCardWrapper}
+                activeOpacity={0.7}
+                onPress={() => setSelectedTime(slot.id)}
+              >
+                <View style={styles.plainTimeCard}>
+                  <Text style={styles.timeCellTextInactive}>{slot.time}</Text>
+                </View>
+              </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* Service summary */}
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryIconWrap}>
-            <Ionicons name="snow-outline" size={22} color="#42A5F5" />
+        {/* Informational Toast Callout Banner */}
+        <View style={styles.infoToastCalloutCard}>
+          <View style={styles.infoIconWrapper}>
+            <Ionicons name="information-circle" size={18} color="#42A5F5" />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.summaryTitle}>
-              {BOOKING_SUMMARY.serviceName} · {BOOKING_SUMMARY.units} unit
-            </Text>
-            <Text style={styles.summarySubtitle}>
-              {BOOKING_SUMMARY.proName} · AI Match: {BOOKING_SUMMARY.matchScore}%
-            </Text>
-          </View>
-          <Text style={styles.summaryPrice}>OMR {servicePrice}</Text>
+          <Text style={styles.infoToastCaptionText}>
+            AC Deep Clean ~45 min. Mohammed arrives at 10:00 AM on Wed 9 Jul.
+          </Text>
         </View>
 
-        {/* Pick a date */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Pick a Date</Text>
-            <View style={styles.aiSuggestBadge}>
-              <Ionicons name="sparkles" size={10} color="#8E24AA" />
-              <Text style={styles.aiSuggestText}>AI suggests Sat 28</Text>
-            </View>
-          </View>
-
-          <View style={styles.dateRow}>
-            {DATE_OPTIONS.map((option) => {
-              const active = option.key === selectedDate;
-              return (
-                <TouchableOpacity
-                  key={option.key}
-                  disabled={option.disabled}
-                  style={[styles.dateChip, active && styles.dateChipActive, option.disabled && styles.dateChipDisabled]}
-                  onPress={() => setSelectedDate(option.key)}
-                >
-                  {active ? (
-                    <LinearGradient
-                      colors={['#E91E8C', '#7C4DFF']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.dateChipGradient}
-                    >
-                      <Text style={[styles.dateChipDay, styles.dateChipTextActive]}>{option.day}</Text>
-                      <Text style={[styles.dateChipDate, styles.dateChipTextActive]}>{option.date}</Text>
-                    </LinearGradient>
-                  ) : (
-                    <>
-                      <Text style={[styles.dateChipDay, option.disabled && styles.dateChipTextDisabled]}>
-                        {option.day}
-                      </Text>
-                      <Text style={[styles.dateChipDate, option.disabled && styles.dateChipTextDisabled]}>
-                        {option.date}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Pick a time slot */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pick a Time Slot</Text>
-          <View style={styles.timeGrid}>
-            {TIME_OPTIONS.map((option) => {
-              const active = option.key === selectedTime;
-              return (
-                <TouchableOpacity
-                  key={option.key}
-                  disabled={option.disabled}
-                  onPress={() => setSelectedTime(option.key)}
-                  style={styles.timeChipWrap}
-                >
-                  {active ? (
-                    <LinearGradient
-                      colors={['#E91E8C', '#7C4DFF']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.timeChip}
-                    >
-                      <Text style={styles.timeChipTextActive}>{option.label}</Text>
-                    </LinearGradient>
-                  ) : (
-                    <View style={[styles.timeChip, styles.timeChipInactive, option.disabled && styles.timeChipDisabled]}>
-                      <Text style={[styles.timeChipText, option.disabled && styles.timeChipTextDisabled]}>
-                        {option.label}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Address */}
-        <View style={styles.addressCard}>
-          <View style={styles.addressLeft}>
-            <Ionicons name="location" size={18} color="#E91E8C" />
-            <View>
-              <Text style={styles.addressLine1}>{ADDRESS.line1}</Text>
-              <Text style={styles.addressLine2}>{ADDRESS.line2}</Text>
-            </View>
-          </View>
-          <TouchableOpacity>
-            <Text style={styles.changeText}>Change</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Price breakdown */}
-        <View style={styles.priceCard}>
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>
-              {BOOKING_SUMMARY.serviceName} × {BOOKING_SUMMARY.units}
-            </Text>
-            <Text style={styles.priceValue}>OMR {servicePrice}.000</Text>
-          </View>
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Platform fee</Text>
-            <Text style={styles.priceValue}>OMR {PLATFORM_FEE}.000</Text>
-          </View>
-          <View style={styles.priceDivider} />
-          <View style={styles.priceRow}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>OMR {total}.000</Text>
-          </View>
-        </View>
       </ScrollView>
 
-      {/* Sticky proceed button */}
-      <View style={styles.footer}>
-        <TouchableOpacity activeOpacity={0.9} 
-        onPress={() => router.push('/bookings/payment')}
-        >
+      {/* ── Fixed Bottom Actions Footer ── */}
+      <View style={styles.stickyFooterArea}>
+        <TouchableOpacity activeOpacity={0.9} onPress={() => router.push('/bookings/address')}>
           <LinearGradient
-            colors={['#E91E8C', '#7C4DFF']}
+            colors={['#D500F9', '#7B1FA2']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={styles.proceedBtn}
+            style={styles.fixedContinueButton}
           >
-            <Text style={styles.proceedBtnText}>Proceed to Payment</Text>
+            <Text style={styles.fixedContinueButtonText}>Continue to Address →</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -286,166 +200,230 @@ export default function ScheduleServiceScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#FFF',
-  },
-  iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  topBarTitle: { fontSize: 16, fontWeight: '800', color: '#1A1A1A' },
-  stepCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    marginHorizontal: 16,
-    marginTop: 14,
-    marginBottom: 18,
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-  },
-  stepItemWrap: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  stepItem: { alignItems: 'center', gap: 6 },
-  stepCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F0F0F0',
-  },
-  stepCircleDone: { backgroundColor: '#2E7D32' },
-  stepCircleActive: { backgroundColor: '#E91E8C' },
-  stepNumber: { fontSize: 12, fontWeight: '700', color: '#9E9E9E' },
-  stepNumberActive: { color: '#FFF' },
-  stepLabel: { fontSize: 10.5, fontWeight: '600', color: '#BDBDBD' },
-  stepLabelDone: { color: '#2E7D32' },
-  stepLabelActive: { color: '#E91E8C' },
-  stepConnector: { flex: 1, height: 2, backgroundColor: '#F0F0F0', marginHorizontal: 4, marginBottom: 16 },
-  stepConnectorDone: { backgroundColor: '#E91E8C' },
-  summaryCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#FFF',
-    marginHorizontal: 16,
-    marginBottom: 22,
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-  },
-  summaryIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#E3F2FD',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  summaryTitle: { fontSize: 13.5, fontWeight: '800', color: '#1A1A1A', marginBottom: 2 },
-  summarySubtitle: { fontSize: 11.5, fontWeight: '500', color: '#9E9E9E' },
-  summaryPrice: { fontSize: 15, fontWeight: '800', color: '#E91E8C' },
-  section: { paddingHorizontal: 16, marginBottom: 22 },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#1A1A1A', marginBottom: 12 },
-  aiSuggestBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#FBEAFB',
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 10,
-  },
-  aiSuggestText: { fontSize: 10.5, fontWeight: '700', color: '#8E24AA' },
-  dateRow: { flexDirection: 'row', gap: 8 },
-  dateChip: {
+  safe: {
     flex: 1,
-    height: 66,
-    borderRadius: 16,
-    backgroundColor: '#F7F7F9',
+    backgroundColor: '#FFF',
+  },
+  wizardHeaderBar: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F7',
   },
-  dateChipActive: { backgroundColor: 'transparent' },
-  dateChipDisabled: { opacity: 0.5 },
-  dateChipGradient: {
+  stepBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  stepItemCenter: {
+    alignItems: 'center',
+    minWidth: 50,
+  },
+  stepCircleCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  circleActive: {
+    backgroundColor: '#BA00E5',
+  },
+  circleInactive: {
+    backgroundColor: '#EAECEF',
+  },
+  stepCircleNumberText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  numTextActive: {
+    color: '#FFF',
+  },
+  numTextInactive: {
+    color: '#9FA4B0',
+  },
+  stepLabelTitle: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  labelActive: {
+    color: '#BA00E5',
+  },
+  labelInactive: {
+    color: '#B5B9C4',
+  },
+  stepHorizontalLineDivider: {
+    flex: 1,
+    height: 2,
+    backgroundColor: '#EAECEF',
+    marginHorizontal: 8,
+    marginTop: -14,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 120,
+  },
+  mainTitleHeader: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#000',
+    marginBottom: 16,
+  },
+  dateSelectorSliderRow: {
+    flexDirection: 'row',
+    marginBottom: 28,
+  },
+  dateCardWrapper: {
+    width: 58,
+    height: 64,
+    marginRight: 10,
+  },
+  gradientDateCard: {
     width: '100%',
     height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
-  },
-  dateChipDay: { fontSize: 11.5, fontWeight: '600', color: '#777', marginBottom: 3 },
-  dateChipDate: { fontSize: 16, fontWeight: '800', color: '#1A1A1A' },
-  dateChipTextActive: { color: '#FFF' },
-  dateChipTextDisabled: { color: '#CCC' },
-  timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  timeChipWrap: { width: '31%' },
-  timeChip: {
-    paddingVertical: 12,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  timeChipInactive: { backgroundColor: '#F7F7F9', borderWidth: 1, borderColor: '#EDEDED' },
-  timeChipDisabled: { opacity: 0.5 },
-  timeChipText: { fontSize: 12.5, fontWeight: '700', color: '#444' },
-  timeChipTextActive: { fontSize: 12.5, fontWeight: '800', color: '#FFF' },
-  timeChipTextDisabled: { color: '#BDBDBD' },
-  addressCard: {
-    flexDirection: 'row',
+  plainDateCard: {
+    width: 58,
+    height: 64,
+    borderRadius: 14,
+    backgroundColor: '#F4F5F8',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
+  },
+  dateCardDayTextActive: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.8)',
+  },
+  dateCardNumberTextActive: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFF',
+    marginTop: 2,
+  },
+  dateCardDayTextInactive: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8E92A0',
+  },
+  dateCardNumberTextInactive: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#000',
+    marginTop: 2,
+  },
+  timesGridWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    backgroundColor: '#FFF',
-    marginHorizontal: 16,
-    marginBottom: 18,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
+    gap: 10,
+    marginBottom: 24,
   },
-  addressLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  addressLine1: { fontSize: 13, fontWeight: '700', color: '#1A1A1A' },
-  addressLine2: { fontSize: 11.5, fontWeight: '500', color: '#9E9E9E', marginTop: 1 },
-  changeText: { fontSize: 12.5, fontWeight: '700', color: '#E91E8C' },
-  priceCard: {
-    backgroundColor: '#FFF',
-    marginHorizontal: 16,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
+  // ── Time slots now mirror the date-card structure: a fixed-size
+  // wrapper (no overflow:hidden, no background) holding either a
+  // LinearGradient (selected) or a plain/disabled inner card. This
+  // matches the pattern used for date cards and avoids the white
+  // flash that happened when TouchableOpacity's activeOpacity
+  // animated a view that had overflow:hidden + conditional style
+  // arrays applied directly to the touchable itself.
+  timeSlotCardWrapper: {
+    width: '31.5%',
+    height: 42,
   },
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  priceLabel: { fontSize: 12.5, fontWeight: '500', color: '#777' },
-  priceValue: { fontSize: 12.5, fontWeight: '700', color: '#1A1A1A' },
-  priceDivider: { height: 1, backgroundColor: '#F0F0F0', marginVertical: 6 },
-  totalLabel: { fontSize: 14, fontWeight: '800', color: '#1A1A1A' },
-  totalValue: { fontSize: 15, fontWeight: '800', color: '#E91E8C' },
-  footer: {
+  gradientTimeCard: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  plainTimeCard: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+    backgroundColor: '#F4F5F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#EAEAEA',
+  },
+  disabledTimeCard: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+    backgroundColor: '#F8F9FB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#F0F1F4',
+    opacity: 0.6,
+  },
+  timeCellTextActive: {
+    color: '#FFF',
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  timeCellTextInactive: {
+    color: '#0B1232',
+    fontSize: 12.5,
+    fontWeight: '600',
+  },
+  disabledTimeText: {
+    color: '#B2B7C6',
+    fontSize: 12.5,
+    fontWeight: '600',
+  },
+  infoToastCalloutCard: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F7FF',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  infoIconWrapper: {
+    marginTop: 1.5,
+  },
+  infoToastCaptionText: {
+    fontSize: 12.5,
+    color: '#5C6AC0',
+    fontWeight: '500',
+    lineHeight: 18,
+    flex: 1,
+  },
+  stickyFooterArea: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFF',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFF',
+    paddingVertical: 14,
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: '#EBEBEB',
   },
-  proceedBtn: {
+  fixedContinueButton: {
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  proceedBtnText: { fontSize: 15, fontWeight: '800', color: '#FFF' },
+  fixedContinueButtonText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '800',
+  },
 });

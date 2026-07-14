@@ -35,6 +35,9 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
           <Stack.Screen name="welcome" />
+          <Stack.Screen name="phone-entry" />
+          <Stack.Screen name="otp-verify" />
+          <Stack.Screen name="login" />
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
